@@ -1,0 +1,11 @@
+{
+  "name": "Remix: HealthLink Daily",
+  "description": "An offline-first clinical daily reporting, inventory tracking, and staff attendance log designed for healthcare facilities.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
