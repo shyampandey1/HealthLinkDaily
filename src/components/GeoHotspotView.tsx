@@ -3,9 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MapPin, Compass, Search, Filter, Clock, Sparkles, ShieldAlert, Mic, MicOff, Map, Terminal, ArrowUpRight, HelpCircle, CheckCircle2, ChevronRight, RefreshCw, Layers } from 'lucide-react';
 import { StockItem } from '../types';
+import 'leaflet/dist/leaflet.css';
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
+
+const MapController = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+  React.useEffect(() => {
+    map.setView(center, map.getZoom(), { animate: true });
+  }, [center, map]);
+  return null;
+};
 
 export interface GeoScan {
   id: string;
@@ -52,6 +62,8 @@ export default function GeoHotspotView({
   const [simVoiceCmd, setSimVoiceCmd] = useState('add fifty drips at Noida PHC');
   const [isSimulating, setIsSimulating] = useState(false);
   const [showSimPanel, setShowSimPanel] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   // Map settings
   const [mapLayer, setMapLayer] = useState<'radar' | 'satellite' | 'grid'>('radar');
@@ -153,6 +165,95 @@ export default function GeoHotspotView({
     { name: 'Faridabad Sub-Station', lat: 28.4089, lng: 77.3178 },
     { name: 'Bahadurgarh Dispensary', lat: 28.6924, lng: 76.9240 }
   ];
+
+  const parseVoiceCommand = (text: string) => {
+    const textLower = text.toLowerCase();
+    
+    // Parse quantity
+    const qtyMatch = textLower.match(/\b\d+\b/);
+    if (qtyMatch) {
+      setSimQty(parseInt(qtyMatch[0], 10));
+    } else {
+      const numberWords: {[key: string]: number} = {
+        'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+        'ten': 10, 'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50,
+        'hundred': 100, 'एक': 1, 'दो': 2, 'तीन': 3, 'चार': 4, 'पांच': 5,
+        'दस': 10, 'बीस': 20, 'तीस': 30, 'चालीस': 40, 'पचास': 50, 'सौ': 100
+      };
+      for (const word of Object.keys(numberWords)) {
+        if (textLower.includes(word)) {
+          setSimQty(numberWords[word]);
+          break;
+        }
+      }
+    }
+
+    // Parse item type & preset standard name
+    if (textLower.includes('drip') || textLower.includes('saline') || textLower.includes('ड्रिप') || textLower.includes('सलाइन')) {
+      setSimType('drip');
+      setSimName('NaCl 0.9% Normal Saline');
+    } else if (textLower.includes('vial') || textLower.includes('injection') || textLower.includes('वायल') || textLower.includes('इंजेक्शन')) {
+      setSimType('vial');
+      setSimName('Ceftriaxone Sodium Injection');
+    } else if (textLower.includes('tablet') || textLower.includes('paracetamol') || textLower.includes('टैबलेट') || textLower.includes('पैरासिटामोल')) {
+      setSimType('tablet');
+      setSimName('Paracetamol 500mg');
+    } else if (textLower.includes('box') || textLower.includes('kit') || textLower.includes('बॉक्स') || textLower.includes('किट')) {
+      setSimType('box');
+      setSimName('First Aid Kit Box');
+    }
+
+    // Parse preset locations
+    presets.forEach(p => {
+      const placeName = p.name.split(' ')[0].toLowerCase();
+      if (textLower.includes(placeName) || (placeName === 'noida' && textLower.includes('नोएडा')) || (placeName === 'gurugram' && textLower.includes('गुरुग्राम')) || (placeName === 'rohtak' && textLower.includes('रोहतक')) || (placeName === 'faridabad' && textLower.includes('फरीदाबाद')) || (placeName === 'bahadurgarh' && textLower.includes('बहादुरगढ़'))) {
+        setSimLat(p.lat);
+        setSimLng(p.lng);
+      }
+    });
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+    } else {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Speech recognition is not supported in this browser. Please try Google Chrome or Safari.");
+        return;
+      }
+
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = languageMode === 'hindi' ? 'hi-IN' : 'en-US';
+
+      rec.onstart = () => {
+        setIsListening(true);
+      };
+
+      rec.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setSimVoiceCmd(transcript);
+        parseVoiceCommand(transcript);
+      };
+
+      rec.onerror = (event: any) => {
+        console.error("Speech recognition error:", event.error);
+        setIsListening(false);
+      };
+
+      rec.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = rec;
+      rec.start();
+    }
+  };
 
   return (
     <div id="geo-hotspot-page-root" className="space-y-6 animate-fadeIn">
@@ -297,18 +398,35 @@ export default function GeoHotspotView({
             {/* Column 3: Verbal Simulation & Submit */}
             <div className="space-y-3 flex flex-col justify-between">
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Verbal Voice Command Log</label>
-                <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  Verbal Voice Command Log {languageMode === 'hindi' ? '(बोलने के लिए माइक दबाएं)' : '(Click mic to speak)'}
+                </label>
+                <div className="relative flex items-center">
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    className={`absolute left-2.5 p-1 rounded-full transition-all duration-200 cursor-pointer ${
+                      isListening
+                        ? 'bg-red-500 text-white animate-pulse'
+                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                    }`}
+                    title={isListening ? "Stop listening" : "Start speaking"}
+                  >
+                    {isListening ? (
+                      <span className="relative flex h-3.5 w-3.5 items-center justify-center">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <Mic className="relative w-3.5 h-3.5 text-white" />
+                      </span>
+                    ) : (
+                      <Mic className="w-3.5 h-3.5" />
+                    )}
+                  </button>
                   <input
                     type="text"
                     value={simVoiceCmd}
                     onChange={(e) => setSimVoiceCmd(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-6 pr-3 py-1.5 text-xs text-slate-300 italic focus:outline-none focus:border-emerald-500"
-                    placeholder="e.g. Capture normal saline thirty jars"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-10 pr-3 py-1.5 text-xs text-slate-300 italic focus:outline-none focus:border-emerald-500"
+                    placeholder={isListening ? "Listening... Speak clearly" : "e.g. Add 50 drips at Noida PHC"}
                   />
                 </div>
               </div>
@@ -373,140 +491,88 @@ export default function GeoHotspotView({
 
           {/* Map Area */}
           <div className="relative flex-1 bg-slate-100 dark:bg-slate-950 flex items-center justify-center overflow-hidden min-h-[350px] transition-colors duration-200">
-            {selectedScan ? (
-              <div className="absolute inset-0 z-20 bg-slate-100 dark:bg-slate-900 flex flex-col">
-                <div className="absolute top-4 left-4 z-30">
-                  <button
-                    onClick={() => setSelectedScanId(null)}
-                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-lg shadow-lg font-bold text-[10px] uppercase flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                  >
-                    <Compass className="w-3.5 h-3.5" />
-                    Back to Radar View
-                  </button>
-                </div>
-                <iframe
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://maps.google.com/maps?q=${selectedScan.lat},${selectedScan.lng}&t=${mapLayer === 'satellite' ? 'k' : 'm'}&z=16&ie=UTF8&iwloc=&output=embed`}
-                  className="flex-1 w-full h-full"
+            <MapContainer 
+              center={[centerLat, centerLng]} 
+              zoom={13} 
+              style={{ width: '100%', height: '100%', zIndex: 10 }}
+              zoomControl={false}
+              className="leaflet-container"
+            >
+              <MapController center={[centerLat, centerLng]} />
+              
+              {/* Dynamic Tile Layer switching using Google Tile Servers */}
+              {mapLayer === 'satellite' ? (
+                <TileLayer
+                  url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                  attribution="&copy; Google Satellite"
+                  maxZoom={20}
                 />
-              </div>
-            ) : (
-              <>
-                {/* Custom layer background graphics */}
-                {mapLayer === 'radar' && (
-                  <div className="absolute inset-0 opacity-25 dark:opacity-15 pointer-events-none">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(16,185,129,0.15)_1px,transparent_1px)] bg-[size:16px_16px]" />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] border border-emerald-500/25 dark:border-emerald-500/20 rounded-full" />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180px] h-[180px] border border-emerald-500/25 dark:border-emerald-500/20 rounded-full" />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60px] h-[60px] border border-emerald-500/35 dark:border-emerald-500/30 rounded-full" />
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-emerald-500/15 dark:bg-emerald-500/10" />
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-px bg-emerald-500/15 dark:bg-emerald-500/10" />
-                  </div>
-                )}
+              ) : (
+                <TileLayer
+                  url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                  attribution="&copy; Google Maps"
+                  maxZoom={20}
+                />
+              )}
 
-                {mapLayer === 'grid' && (
-                  <div className="absolute inset-0 opacity-30 dark:opacity-20 pointer-events-none bg-[linear-gradient(to_right,rgba(120,119,198,0.15)_1px,transparent_1px),linear-gradient(to_bottom,rgba(120,119,198,0.15)_1px,transparent_1px)] bg-[size:24px_24px]">
-                    {/* Horizontal coordinate labels */}
-                    <div className="absolute bottom-2 left-4 text-[8px] font-mono text-slate-500 dark:text-slate-400">GRID REF NCR-28-77</div>
-                  </div>
-                )}
+              {/* Render Leaflet GeoPins */}
+              {filteredScans.map((scan) => {
+                const isSelected = scan.id === selectedScanId;
+                
+                // Color codes for pin types
+                let pinColor = '#3b82f6'; // blue box
+                if (scan.itemType === 'drip') pinColor = '#10b981'; // emerald
+                if (scan.itemType === 'vial') pinColor = '#f59e0b'; // amber
+                if (scan.itemType === 'tablet') pinColor = '#9333ea'; // purple
 
-                {mapLayer === 'satellite' && (
-                  <div className="absolute inset-0 opacity-20 dark:opacity-10 pointer-events-none bg-gradient-to-tr from-cyan-900/20 via-slate-100 to-indigo-950/20 dark:from-cyan-900/40 dark:via-slate-950 dark:to-indigo-950/40 transition-all duration-200">
-                    <div className="absolute bottom-4 right-4 text-[7px] font-mono text-slate-600 dark:text-slate-400 font-bold">SAT INTEL ORBITAL FEED</div>
-                  </div>
-                )}
+                return (
+                  <CircleMarker
+                    key={scan.id}
+                    center={[scan.lat, scan.lng]}
+                    pathOptions={{ 
+                      color: isSelected ? '#ffffff' : pinColor, 
+                      fillColor: pinColor, 
+                      fillOpacity: 0.6,
+                      weight: isSelected ? 3 : 2
+                    }}
+                    radius={isSelected ? 10 : 6}
+                    eventHandlers={{
+                      click: () => setSelectedScanId(scan.id),
+                    }}
+                  >
+                    {isSelected && (
+                      <Popup autoClose={false}>
+                        <div className="font-sans font-bold text-[11px]">
+                          {scan.medicineName} (Qty: {scan.qty})
+                        </div>
+                      </Popup>
+                    )}
+                  </CircleMarker>
+                );
+              })}
+            </MapContainer>
 
-                {/* District Target Center & Compass Accent */}
-                <div className="absolute top-4 right-4 bg-white/85 dark:bg-black/40 border border-outline-variant dark:border-slate-800 rounded-lg p-2 text-right select-none text-[8px] font-mono text-slate-600 dark:text-slate-400 leading-normal pointer-events-none z-10 shadow-sm transition-colors duration-200">
-                  <p className="font-bold">CENTER: HARYANA REGION</p>
-                  <p>LAT: {((latBounds.min + latBounds.max) / 2).toFixed(4)}°N</p>
-                  <p>LNG: {((lngBounds.min + lngBounds.max) / 2).toFixed(4)}°E</p>
-                </div>
-
-                {/* Live Sweeping Radar bar */}
-                {mapLayer === 'radar' && (
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] origin-center bg-gradient-to-r from-transparent via-emerald-500/10 dark:via-emerald-500/5 to-transparent animate-[spin_6s_linear_infinite] pointer-events-none" />
-                )}
-
-                {/* Render GeoPins */}
-                <svg className="absolute inset-0 w-full h-full p-6 select-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  {filteredScans.map((scan) => {
-                    const { x, y } = getCoordinatesPct(scan.lat, scan.lng);
-                    const isSelected = scan.id === selectedScanId;
-                    
-                    // Color codes for pin types (using darker border tones in light mode for contrast)
-                    let pinColor = 'text-blue-500 dark:text-blue-400 fill-blue-500/20'; // box
-                    if (scan.itemType === 'drip') pinColor = 'text-emerald-600 dark:text-emerald-400 fill-emerald-500/20';
-                    if (scan.itemType === 'vial') pinColor = 'text-amber-600 dark:text-amber-400 fill-amber-500/20';
-                    if (scan.itemType === 'tablet') pinColor = 'text-purple-600 dark:text-purple-400 fill-purple-500/20';
-
-                    return (
-                      <g key={scan.id} className="cursor-pointer group">
-                        {/* Ring highlight animation for selected pin */}
-                        {isSelected && (
-                          <circle
-                            cx={x}
-                            cy={y}
-                            r="3.5"
-                            className="fill-none stroke-slate-900 dark:stroke-white animate-ping opacity-60 stroke-[0.4]"
-                          />
-                        )}
-                        
-                        {/* Outer sensor halo */}
-                        <circle
-                          cx={x}
-                          cy={y}
-                          r={isSelected ? "5" : "2.5"}
-                          className={`transition-all duration-300 stroke-current ${pinColor} ${
-                            isSelected ? 'opacity-85 stroke-[0.4]' : 'opacity-40 stroke-[0.2] hover:opacity-75'
-                          }`}
-                          onClick={() => setSelectedScanId(scan.id)}
-                        />
-
-                        {/* Core coordinate dot */}
-                        <circle
-                          cx={x}
-                          cy={y}
-                          r="0.8"
-                          className={`fill-slate-900 dark:fill-white transition-all ${
-                            isSelected ? 'r-1' : ''
-                          }`}
-                          onClick={() => setSelectedScanId(scan.id)}
-                        />
-
-                        {/* Small tag next to selected pins */}
-                        {isSelected && (
-                          <text
-                            x={x + 2.5}
-                            y={y + 0.6}
-                            className="fill-slate-900 dark:fill-white font-sans font-bold text-[2.5px] tracking-wide pointer-events-none drop-shadow-md select-none"
-                          >
-                            {scan.medicineName.split(' ')[0]} ({scan.qty})
-                          </text>
-                        )}
-                      </g>
-                    );
-                  })}
-                </svg>
-
-                {/* Simple scale guide */}
-                <div className="absolute bottom-3 left-4 bg-white/85 dark:bg-black/40 border border-outline-variant dark:border-slate-800 rounded-lg px-2 py-1 text-[8px] font-mono text-slate-600 dark:text-slate-400 select-none pointer-events-none flex items-center gap-1.5 shadow-sm transition-colors duration-200">
-                  <span className="w-5 h-0.5 bg-slate-500 dark:bg-slate-400 block" />
-                  <span>Scale: Approx. 10km Radius</span>
-                </div>
-
-                {/* Dynamic Compass Rose decoration */}
-                <div className="absolute bottom-3 right-4 opacity-50 dark:opacity-40 select-none pointer-events-none transition-colors duration-200">
-                  <Compass className="w-6 h-6 text-slate-600 dark:text-slate-500 animate-spin-slow" />
-                </div>
-              </>
+            {/* Overlays on top of Map */}
+            {mapLayer === 'satellite' && (
+              <div className="absolute inset-0 opacity-20 dark:opacity-10 pointer-events-none bg-gradient-to-tr from-cyan-900/20 via-slate-100 to-indigo-950/20 dark:from-cyan-900/40 dark:via-slate-950 dark:to-indigo-950/40 z-[15]" />
             )}
+
+            {/* Live Sweeping Radar bar over real map */}
+            {mapLayer === 'radar' && (
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] origin-center bg-gradient-to-r from-transparent via-emerald-500/15 dark:via-emerald-500/10 to-transparent animate-[spin_6s_linear_infinite] pointer-events-none z-[15]" />
+            )}
+
+            {/* District Target Center Overlay */}
+            <div className="absolute top-4 right-4 bg-white/90 dark:bg-black/60 border border-outline-variant dark:border-slate-800 rounded-lg p-2 text-right select-none text-[8px] font-mono text-slate-700 dark:text-slate-300 leading-normal pointer-events-none z-20 shadow-lg backdrop-blur-sm">
+              <p className="font-bold text-emerald-600 dark:text-emerald-400">CENTER: HARYANA REGION</p>
+              <p>LAT: {centerLat.toFixed(4)}°N</p>
+              <p>LNG: {centerLng.toFixed(4)}°E</p>
+            </div>
+
+            {/* Dynamic Compass Rose decoration */}
+            <div className="absolute bottom-4 right-4 opacity-75 dark:opacity-60 select-none pointer-events-none z-20 bg-white/50 dark:bg-black/50 rounded-full p-1 backdrop-blur-sm">
+              <Compass className="w-8 h-8 text-slate-700 dark:text-slate-400 animate-spin-slow" />
+            </div>
 
           </div>
 
