@@ -373,114 +373,140 @@ export default function GeoHotspotView({
 
           {/* Map Area */}
           <div className="relative flex-1 bg-slate-100 dark:bg-slate-950 flex items-center justify-center overflow-hidden min-h-[350px] transition-colors duration-200">
-            {/* Custom layer background graphics */}
-            {mapLayer === 'radar' && (
-              <div className="absolute inset-0 opacity-25 dark:opacity-15 pointer-events-none">
-                <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(16,185,129,0.15)_1px,transparent_1px)] bg-[size:16px_16px]" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] border border-emerald-500/25 dark:border-emerald-500/20 rounded-full" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180px] h-[180px] border border-emerald-500/25 dark:border-emerald-500/20 rounded-full" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60px] h-[60px] border border-emerald-500/35 dark:border-emerald-500/30 rounded-full" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-emerald-500/15 dark:bg-emerald-500/10" />
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-px bg-emerald-500/15 dark:bg-emerald-500/10" />
+            {selectedScan ? (
+              <div className="absolute inset-0 z-20 bg-slate-100 dark:bg-slate-900 flex flex-col">
+                <div className="absolute top-4 left-4 z-30">
+                  <button
+                    onClick={() => setSelectedScanId(null)}
+                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-lg shadow-lg font-bold text-[10px] uppercase flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    <Compass className="w-3.5 h-3.5" />
+                    Back to Radar View
+                  </button>
+                </div>
+                <iframe
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={`https://maps.google.com/maps?q=${selectedScan.lat},${selectedScan.lng}&t=${mapLayer === 'satellite' ? 'k' : 'm'}&z=16&ie=UTF8&iwloc=&output=embed`}
+                  className="flex-1 w-full h-full"
+                />
               </div>
-            )}
+            ) : (
+              <>
+                {/* Custom layer background graphics */}
+                {mapLayer === 'radar' && (
+                  <div className="absolute inset-0 opacity-25 dark:opacity-15 pointer-events-none">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(16,185,129,0.15)_1px,transparent_1px)] bg-[size:16px_16px]" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] border border-emerald-500/25 dark:border-emerald-500/20 rounded-full" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180px] h-[180px] border border-emerald-500/25 dark:border-emerald-500/20 rounded-full" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60px] h-[60px] border border-emerald-500/35 dark:border-emerald-500/30 rounded-full" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-emerald-500/15 dark:bg-emerald-500/10" />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-px bg-emerald-500/15 dark:bg-emerald-500/10" />
+                  </div>
+                )}
 
-            {mapLayer === 'grid' && (
-              <div className="absolute inset-0 opacity-30 dark:opacity-20 pointer-events-none bg-[linear-gradient(to_right,rgba(120,119,198,0.15)_1px,transparent_1px),linear-gradient(to_bottom,rgba(120,119,198,0.15)_1px,transparent_1px)] bg-[size:24px_24px]">
-                {/* Horizontal coordinate labels */}
-                <div className="absolute bottom-2 left-4 text-[8px] font-mono text-slate-500 dark:text-slate-400">GRID REF NCR-28-77</div>
-              </div>
-            )}
+                {mapLayer === 'grid' && (
+                  <div className="absolute inset-0 opacity-30 dark:opacity-20 pointer-events-none bg-[linear-gradient(to_right,rgba(120,119,198,0.15)_1px,transparent_1px),linear-gradient(to_bottom,rgba(120,119,198,0.15)_1px,transparent_1px)] bg-[size:24px_24px]">
+                    {/* Horizontal coordinate labels */}
+                    <div className="absolute bottom-2 left-4 text-[8px] font-mono text-slate-500 dark:text-slate-400">GRID REF NCR-28-77</div>
+                  </div>
+                )}
 
-            {mapLayer === 'satellite' && (
-              <div className="absolute inset-0 opacity-20 dark:opacity-10 pointer-events-none bg-gradient-to-tr from-cyan-900/20 via-slate-100 to-indigo-950/20 dark:from-cyan-900/40 dark:via-slate-950 dark:to-indigo-950/40 transition-all duration-200">
-                <div className="absolute bottom-4 right-4 text-[7px] font-mono text-slate-600 dark:text-slate-400 font-bold">SAT INTEL ORBITAL FEED</div>
-              </div>
-            )}
+                {mapLayer === 'satellite' && (
+                  <div className="absolute inset-0 opacity-20 dark:opacity-10 pointer-events-none bg-gradient-to-tr from-cyan-900/20 via-slate-100 to-indigo-950/20 dark:from-cyan-900/40 dark:via-slate-950 dark:to-indigo-950/40 transition-all duration-200">
+                    <div className="absolute bottom-4 right-4 text-[7px] font-mono text-slate-600 dark:text-slate-400 font-bold">SAT INTEL ORBITAL FEED</div>
+                  </div>
+                )}
 
-            {/* District Target Center & Compass Accent */}
-            <div className="absolute top-4 right-4 bg-white/85 dark:bg-black/40 border border-outline-variant dark:border-slate-800 rounded-lg p-2 text-right select-none text-[8px] font-mono text-slate-600 dark:text-slate-400 leading-normal pointer-events-none z-10 shadow-sm transition-colors duration-200">
-              <p className="font-bold">CENTER: HARYANA REGION</p>
-              <p>LAT: {((latBounds.min + latBounds.max) / 2).toFixed(4)}°N</p>
-              <p>LNG: {((lngBounds.min + lngBounds.max) / 2).toFixed(4)}°E</p>
-            </div>
+                {/* District Target Center & Compass Accent */}
+                <div className="absolute top-4 right-4 bg-white/85 dark:bg-black/40 border border-outline-variant dark:border-slate-800 rounded-lg p-2 text-right select-none text-[8px] font-mono text-slate-600 dark:text-slate-400 leading-normal pointer-events-none z-10 shadow-sm transition-colors duration-200">
+                  <p className="font-bold">CENTER: HARYANA REGION</p>
+                  <p>LAT: {((latBounds.min + latBounds.max) / 2).toFixed(4)}°N</p>
+                  <p>LNG: {((lngBounds.min + lngBounds.max) / 2).toFixed(4)}°E</p>
+                </div>
 
-            {/* Live Sweeping Radar bar */}
-            {mapLayer === 'radar' && (
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] origin-center bg-gradient-to-r from-transparent via-emerald-500/10 dark:via-emerald-500/5 to-transparent animate-[spin_6s_linear_infinite] pointer-events-none" />
-            )}
+                {/* Live Sweeping Radar bar */}
+                {mapLayer === 'radar' && (
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] origin-center bg-gradient-to-r from-transparent via-emerald-500/10 dark:via-emerald-500/5 to-transparent animate-[spin_6s_linear_infinite] pointer-events-none" />
+                )}
 
-            {/* Render GeoPins */}
-            <svg className="absolute inset-0 w-full h-full p-6 select-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-              {filteredScans.map((scan) => {
-                const { x, y } = getCoordinatesPct(scan.lat, scan.lng);
-                const isSelected = scan.id === selectedScanId;
-                
-                // Color codes for pin types (using darker border tones in light mode for contrast)
-                let pinColor = 'text-blue-500 dark:text-blue-400 fill-blue-500/20'; // box
-                if (scan.itemType === 'drip') pinColor = 'text-emerald-600 dark:text-emerald-400 fill-emerald-500/20';
-                if (scan.itemType === 'vial') pinColor = 'text-amber-600 dark:text-amber-400 fill-amber-500/20';
-                if (scan.itemType === 'tablet') pinColor = 'text-purple-600 dark:text-purple-400 fill-purple-500/20';
-
-                return (
-                  <g key={scan.id} className="cursor-pointer group">
-                    {/* Ring highlight animation for selected pin */}
-                    {isSelected && (
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r="3.5"
-                        className="fill-none stroke-slate-900 dark:stroke-white animate-ping opacity-60 stroke-[0.4]"
-                      />
-                    )}
+                {/* Render GeoPins */}
+                <svg className="absolute inset-0 w-full h-full p-6 select-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  {filteredScans.map((scan) => {
+                    const { x, y } = getCoordinatesPct(scan.lat, scan.lng);
+                    const isSelected = scan.id === selectedScanId;
                     
-                    {/* Outer sensor halo */}
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r={isSelected ? "5" : "2.5"}
-                      className={`transition-all duration-300 stroke-current ${pinColor} ${
-                        isSelected ? 'opacity-85 stroke-[0.4]' : 'opacity-40 stroke-[0.2] hover:opacity-75'
-                      }`}
-                      onClick={() => setSelectedScanId(scan.id)}
-                    />
+                    // Color codes for pin types (using darker border tones in light mode for contrast)
+                    let pinColor = 'text-blue-500 dark:text-blue-400 fill-blue-500/20'; // box
+                    if (scan.itemType === 'drip') pinColor = 'text-emerald-600 dark:text-emerald-400 fill-emerald-500/20';
+                    if (scan.itemType === 'vial') pinColor = 'text-amber-600 dark:text-amber-400 fill-amber-500/20';
+                    if (scan.itemType === 'tablet') pinColor = 'text-purple-600 dark:text-purple-400 fill-purple-500/20';
 
-                    {/* Core coordinate dot */}
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r="0.8"
-                      className={`fill-slate-900 dark:fill-white transition-all ${
-                        isSelected ? 'r-1' : ''
-                      }`}
-                      onClick={() => setSelectedScanId(scan.id)}
-                    />
+                    return (
+                      <g key={scan.id} className="cursor-pointer group">
+                        {/* Ring highlight animation for selected pin */}
+                        {isSelected && (
+                          <circle
+                            cx={x}
+                            cy={y}
+                            r="3.5"
+                            className="fill-none stroke-slate-900 dark:stroke-white animate-ping opacity-60 stroke-[0.4]"
+                          />
+                        )}
+                        
+                        {/* Outer sensor halo */}
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={isSelected ? "5" : "2.5"}
+                          className={`transition-all duration-300 stroke-current ${pinColor} ${
+                            isSelected ? 'opacity-85 stroke-[0.4]' : 'opacity-40 stroke-[0.2] hover:opacity-75'
+                          }`}
+                          onClick={() => setSelectedScanId(scan.id)}
+                        />
 
-                    {/* Small tag next to selected pins */}
-                    {isSelected && (
-                      <text
-                        x={x + 2.5}
-                        y={y + 0.6}
-                        className="fill-slate-900 dark:fill-white font-sans font-bold text-[2.5px] tracking-wide pointer-events-none drop-shadow-md select-none"
-                      >
-                        {scan.medicineName.split(' ')[0]} ({scan.qty})
-                      </text>
-                    )}
-                  </g>
-                );
-              })}
-            </svg>
+                        {/* Core coordinate dot */}
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r="0.8"
+                          className={`fill-slate-900 dark:fill-white transition-all ${
+                            isSelected ? 'r-1' : ''
+                          }`}
+                          onClick={() => setSelectedScanId(scan.id)}
+                        />
 
-            {/* Simple scale guide */}
-            <div className="absolute bottom-3 left-4 bg-white/85 dark:bg-black/40 border border-outline-variant dark:border-slate-800 rounded-lg px-2 py-1 text-[8px] font-mono text-slate-600 dark:text-slate-400 select-none pointer-events-none flex items-center gap-1.5 shadow-sm transition-colors duration-200">
-              <span className="w-5 h-0.5 bg-slate-500 dark:bg-slate-400 block" />
-              <span>Scale: Approx. 10km Radius</span>
-            </div>
+                        {/* Small tag next to selected pins */}
+                        {isSelected && (
+                          <text
+                            x={x + 2.5}
+                            y={y + 0.6}
+                            className="fill-slate-900 dark:fill-white font-sans font-bold text-[2.5px] tracking-wide pointer-events-none drop-shadow-md select-none"
+                          >
+                            {scan.medicineName.split(' ')[0]} ({scan.qty})
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
+                </svg>
 
-            {/* Dynamic Compass Rose decoration */}
-            <div className="absolute bottom-3 right-4 opacity-50 dark:opacity-40 select-none pointer-events-none transition-colors duration-200">
-              <Compass className="w-6 h-6 text-slate-600 dark:text-slate-500 animate-spin-slow" />
-            </div>
+                {/* Simple scale guide */}
+                <div className="absolute bottom-3 left-4 bg-white/85 dark:bg-black/40 border border-outline-variant dark:border-slate-800 rounded-lg px-2 py-1 text-[8px] font-mono text-slate-600 dark:text-slate-400 select-none pointer-events-none flex items-center gap-1.5 shadow-sm transition-colors duration-200">
+                  <span className="w-5 h-0.5 bg-slate-500 dark:bg-slate-400 block" />
+                  <span>Scale: Approx. 10km Radius</span>
+                </div>
+
+                {/* Dynamic Compass Rose decoration */}
+                <div className="absolute bottom-3 right-4 opacity-50 dark:opacity-40 select-none pointer-events-none transition-colors duration-200">
+                  <Compass className="w-6 h-6 text-slate-600 dark:text-slate-500 animate-spin-slow" />
+                </div>
+              </>
+            )}
 
           </div>
 
