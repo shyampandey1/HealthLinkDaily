@@ -199,7 +199,32 @@ export default function AuthView({ onLoginSuccess, languageMode }: AuthViewProps
         const { signInWithPopup } = await import('firebase/auth');
         const result = await signInWithPopup(auth, googleProvider);
         const user = result.user;
+        const uid = user.uid;
+
+        // Try to fetch existing user profile from Firestore
+        let userProfile = null;
+        try {
+          const { doc, getDoc } = await import('firebase/firestore');
+          const { db } = await import('../config/firebase');
+          if (db) {
+            const userDoc = await getDoc(doc(db, 'users', uid));
+            if (userDoc.exists()) {
+              userProfile = { id: uid, ...userDoc.data() };
+            }
+          }
+        } catch (dbErr) {
+          console.warn('[Firestore] Google user profile check failed, proceeding to register', dbErr);
+        }
+
+        if (userProfile) {
+          // Returning Google user: bypass registry and log in directly!
+          const token = await user.getIdToken();
+          onLoginSuccess(userProfile, token);
+          return;
+        }
+
         const gUser = {
+          uid: uid,
           email: user.email || "shyamp028@gmail.com",
           name: user.displayName || "Shyam Prasad"
         };
@@ -210,10 +235,13 @@ export default function AuthView({ onLoginSuccess, languageMode }: AuthViewProps
         // Prefill registration fields based on google info
         setHospAdminName(gUser.name);
         setHospAdminEmail(gUser.email);
+        setHospPassword("google-auth-no-password");
         setStaffName(gUser.name);
         setStaffEmail(gUser.email);
+        setStaffPassword("google-auth-no-password");
         setPatName(gUser.name);
         setPatEmail(gUser.email);
+        setPatPassword("google-auth-no-password");
       } catch (err: any) {
         console.error("Firebase Google Auth Failed:", err);
         setErrorMsg(`Google Auth Failed: ${err.message}. Reverting to sandbox mock.`);
@@ -230,6 +258,7 @@ export default function AuthView({ onLoginSuccess, languageMode }: AuthViewProps
     setTimeout(() => {
       setIsGoogleConnecting(false);
       const mockGoogle = {
+        uid: "mock-google-uid-123",
         email: "shyamp028@gmail.com",
         name: "Shyam Prasad"
       };
@@ -240,10 +269,13 @@ export default function AuthView({ onLoginSuccess, languageMode }: AuthViewProps
       // Prefill registration fields based on google info
       setHospAdminName(mockGoogle.name);
       setHospAdminEmail(mockGoogle.email);
+      setHospPassword("google-auth-no-password");
       setStaffName(mockGoogle.name);
       setStaffEmail(mockGoogle.email);
+      setStaffPassword("google-auth-no-password");
       setPatName(mockGoogle.name);
       setPatEmail(mockGoogle.email);
+      setPatPassword("google-auth-no-password");
     }, 1200);
   };
 
@@ -310,7 +342,10 @@ export default function AuthView({ onLoginSuccess, languageMode }: AuthViewProps
         };
       }
 
-      if (isFirebaseReady && auth && email && pwd) {
+      if (googleUser && googleUser.uid) {
+        userId = googleUser.uid;
+        console.log('[Firebase Auth] Registering Google user profile using Google UID:', userId);
+      } else if (isFirebaseReady && auth && email && pwd) {
         try {
           const { createUserWithEmailAndPassword } = await import('firebase/auth');
           const userCred = await createUserWithEmailAndPassword(auth, email, pwd);
