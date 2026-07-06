@@ -91,6 +91,16 @@ export default function GeoHotspotView({
     return geoScans.find(s => s.id === selectedScanId) || null;
   }, [geoScans, selectedScanId]);
 
+  const centerLat = useMemo(() => {
+    if (selectedScan) return selectedScan.lat;
+    return (latBounds.min + latBounds.max) / 2;
+  }, [selectedScan, latBounds.min, latBounds.max]);
+
+  const centerLng = useMemo(() => {
+    if (selectedScan) return selectedScan.lng;
+    return (lngBounds.min + lngBounds.max) / 2;
+  }, [selectedScan, lngBounds.min, lngBounds.max]);
+
   // Filter geoScans
   const filteredScans = useMemo(() => {
     return geoScans.filter(scan => {
