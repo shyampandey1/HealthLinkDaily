@@ -279,7 +279,7 @@ export default function GeoHotspotView({
                 {languageMode === 'hindi' ? 'भू-हॉटस्पॉट ट्रैकिंग डैशबोर्ड' : 'Geo Hotspot Logistics Tracker'}
               </h2>
               <span className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider block mt-1">
-                {languageMode === 'hindi' ? 'वास्तविक समय जीपीएस और वॉयस ओसीआर विजुअलाइज़र' : 'Real-time GPS Coordinate OCR & Voice Input Visualization'}
+                {languageMode === 'hindi' ? 'वास्तविक समय आपूर्ति बीकन और वॉयस कमांड लिंक' : 'Real-time Supply Beacon Network & Voice Command Link'}
               </span>
             </div>
           </div>
@@ -308,7 +308,7 @@ export default function GeoHotspotView({
           <div className="flex justify-between items-center border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4.5 h-4.5 text-yellow-400" />
-              <span className="text-xs font-bold text-white uppercase tracking-wider">OCR + GPS + Voice Telemetry Emulator</span>
+              <span className="text-xs font-bold text-white uppercase tracking-wider">AI Supply Drop & Voice Telemetry Cockpit</span>
             </div>
             <span className="text-[9px] bg-emerald-500/10 text-emerald-400 font-mono border border-emerald-500/20 px-2 py-0.5 rounded">
               ADMIN SIMULATOR
@@ -614,7 +614,7 @@ export default function GeoHotspotView({
           {/* Filter & Search Bar */}
           <div className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-4 shadow-sm space-y-3 shrink-0">
             <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider block">
-              Search & Filter Geologs
+              Search & Filter Supply logs
             </span>
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -712,7 +712,7 @@ export default function GeoHotspotView({
                   </div>
 
                   <div className="bg-surface-container-low p-3 rounded-xl border border-outline-variant text-center">
-                    <span className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider block">OCR Confidence</span>
+                    <span className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider block">Neural Matching Score</span>
                     <span className="font-mono text-lg font-black text-emerald-600 mt-1 block">{(selectedScan.confidence * 100).toFixed(0)}%</span>
                   </div>
                 </div>
@@ -748,7 +748,7 @@ export default function GeoHotspotView({
                 </div>
                 <h4 className="font-bold text-xs">No Target Selected</h4>
                 <p className="text-[11px] text-on-surface-variant/85 max-w-xs leading-relaxed mt-1">
-                  Click on any coordinate point on the radar grid to view real-time Vision OCR payload details, GPS satellite stamps, and verbal logs.
+                  Click on any coordinate point on the map to view real-time AI supply details, GPS satellite stamps, and verbal logs.
                 </p>
               </div>
             )}
