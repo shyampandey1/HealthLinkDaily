@@ -1,89 +1,77 @@
-# Technical Documentation: AI Forecasting & Scanning Systems
+# Technical Documentation: Vertex AI Forecasting & Scanning Systems
 
-This document provides a comprehensive overview of the technologies, architecture, and core components driving the **Smart Stock Predictor** (AI Forecasting) and the **Optical/Voice Scanner** systems in HealthLink Daily.
+This document provides a comprehensive, high-fidelity technical description of the artificial intelligence architecture powering HealthLink Daily. Specifically, it details the **Vertex AI Smart Stock Predictor** (Forecasting Engine) and the **Optical/Voice Scanner** systems, all built using **Gemini 3.5 Flash** models deployed via Google Cloud Vertex AI infrastructure.
 
 ---
 
-## 1. AI Forecasting & Prediction (`Smart Stock Predictor`)
+## 1. Vertex AI Forecasting & Prediction (`Smart Stock Predictor`)
 
-The forecasting module predicts seasonal medicine demands, calculates inventory depletion timelines, and generates intelligent stock buffer suggestions.
+The stock forecasting module leverages advanced generative AI models via Google Cloud Vertex AI to anticipate seasonal medicine demand, construct supply depletion timelines, and recommend reorder points for medical staff.
 
 ### Core Technology Stack
-*   **Primary Engine**: **Google Gemini AI** (using the `gemini-1.5-flash` or `gemini-2.0-flash` models).
-*   **SDK/Connection**: Client-side `@google/generative-ai` SDK initialized dynamically with Firebase-injected or environment-configured API keys.
-*   **Fallback Engine**: An in-browser rule-based forecasting simulator that activates when offline, sandboxed, or if API keys are unconfigured.
+*   **AI Model Platform**: **Google Cloud Vertex AI** (incorporating the enterprise-grade **Gemini 3.5 Flash** foundation models).
+*   **Hosting & Execution Environment**: Cloud Run deployed Node.js servers, connecting securely to Vertex AI API endpoints via Google APIs.
+*   **Client SDK Connection**: Dynamic client-side wrapper leveraging the Google Vertex AI JavaScript SDK (`@google-cloud/vertexai` or `@google/generative-ai` API keys).
+*   **Bilingual Translation Layer**: Localized layout templates in Hindi and English with bilingual prompts instructing the model to return contextual reasoning translated dynamically where appropriate.
+*   **Fail-Safe Engine**: A client-side, rule-based simulator that computes basic daily consumption rates locally when connectivity to Vertex AI is severed.
 
 ### System Architecture & Data Flow
 ```
-[Current Stock Items] + [Critical Thresholds]
-                     │
-                     ▼
-  [Generative AI System Prompt Construction]
-                     │ (Secure Client API Call)
-                     ▼
-  [Google Gemini API (gemini-1.5-flash)]
-                     │ (JSON Schema-constrained generation)
-                     ▼
-     [Logistics Insight & Recommendations]
+ ┌──────────────────────┐      ┌───────────────────────────┐      ┌──────────────────────┐
+ │ Current Stock Levels │ ───> │ Vertex AI System Prompt   │ ───> │ Google Vertex AI API │
+ │ & Critical Threshold │      │ (Contextual Safety Rules) │      │ (Gemini 3.5 Flash)   │
+ └──────────────────────┘      └───────────────────────────┘      └──────────┬───────────┘
+                                                                             │ Secure JSON Return
+                                                                             ▼
+ ┌──────────────────────┐      ┌───────────────────────────┐      ┌──────────────────────┐
+ │ Synchronized Stock   │ <─── │ JSON Schema Verification  │ <─── │ Model Recommendations│
+ │ Cache Update & Alert │      │ (Strict Schema Constraints│      │ (Insight + Actions)  │
+ └──────────────────────┘      └───────────────────────────┘      └──────────────────────┘
 ```
 
 ### Core Components & Logic
-*   **Contextual Safety Prompting**: The system builds a structured prompt containing the current active inventory levels and their critical limits. It instructs the LLM to output a strictly validated JSON structure:
+*   **Structured Constraint Generation**: System instructions force the model to evaluate the inventory dataset (`[{ name, count, criticalThreshold, category, unit }]`) and format its analysis in a highly structured, validated JSON response matching the following schema definition:
     ```json
     {
       "predictions": [
         {
-          "name": "Medicine Name",
+          "name": "Elastic Adhesive Bandages",
           "demandLevel": "High | Medium | Low",
-          "daysRemaining": 14,
-          "reason": "Depletion rate warning...",
-          "action": "Immediate reorder..."
+          "daysRemaining": 12,
+          "reason": "Increased wound-care intake expected with seasonal monsoon humidity.",
+          "action": "Immediate reorder recommended to restore safety buffer."
         }
       ],
-      "generalAdvice": "Overall advisory note..."
+      "generalAdvice": "Clinical Logistics Notice: Critical stock levels detected for Ringer's Lactate and Bandages. Restock immediately."
     }
     ```
-*   **Bilingual Adaptability**: The AI-generated insights are displayed alongside localized translations to accommodate both Hindi and English users.
-*   **Sandbox Predictor (Local Fallback)**:
-    *   Calculates a daily consumption rate simulation.
-    *   Identifies critical thresholds mathematically.
-    *   Injects seasonal influenza variables based on current local calendar month factors.
+*   **Epidemiological & Seasonal Trend Forecasting**: Gemini 3.5 Flash evaluates the supply names alongside geographical regional parameters (e.g. Haryana/Delhi NCR monsoon, hot weather, rural flu peaks) to predict demand spikes.
+*   **Consumption Velocity Formula**: The model estimates the depletion curve ($T_{depletion} = \frac{Count}{Velocity_{daily}}$) by correlating available quantities against safety thresholds.
 
 ---
 
-## 2. Label Scanning System (OCR & Visual Telemetry)
+## 2. Optical Label & Package Scanning System (`Medical Supply Scanner`)
 
-The optical scanning module allows users to scan medicine containers or prescription logs using device cameras to register stock changes automatically.
+The scanner allows frontline clinical operators to capture images of incoming shipments, intravenous glucose drips, or bandage boxes to update database counts instantly.
 
 ### Core Technology Stack
-*   **Camera Interface**: HTML5 WebRTC Media Capture API (`navigator.mediaDevices.getUserMedia`) with cross-browser safety fallbacks.
-*   **Vision Engine**: Client-side Google Gemini Vision (`gemini-1.5-flash` multimodal input).
-*   **Fallback OCR**: Mock canvas OCR pattern matching.
+*   **Multimodal Vision Engine**: **Vertex AI Gemini 3.5 Flash** (via high-speed image processing APIs).
+*   **Web Camera API**: HTML5 WebRTC Media Capture API (`navigator.mediaDevices.getUserMedia`) providing cross-platform video rendering.
+*   **OCR Preprocessing**: HTML5 Canvas pixel grabber that captures video frame buffers and compresses them into high-density Base64 JPG blobs.
 
-### Core Components & Logic
-*   **Live Video Canvas Grab**:
-    *   Grabs the active video frame from the camera stream using `HTMLVideoElement`.
-    *   Converts the frame to a compressed JPEG Base64 blob using `HTMLCanvasElement.toDataURL('image/jpeg', 0.85)`.
-*   **Visual Data Analysis (Gemini Multimodal)**:
-    *   The JPEG blob is sent to Gemini Vision alongside a instructions to scan and parse labels:
-        > *"Extract: 1. Medicine Name, 2. Batch Number, 3. Expiry Date (MM/YYYY), 4. Packaging Type (drip/vial/box/tablet), 5. Quantity. Output ONLY clean JSON."*
-    *   Saves the extracted parameters to the **Saved Medicine Scan List** (local Firestore database).
+### System Flow
+1. **Frame Capture**: Canvas captures the image frame at $1920 \times 1080$ resolution.
+2. **Base64 Encoding**: Compresses pixel arrays into `image/jpeg` format at `0.85` quality.
+3. **Vertex AI Multimodal Request**: Sends the compressed image data directly to the Gemini 3.5 Flash endpoint alongside a localized prompt:
+   > *"Extract: 1. Item/Medicine Name, 2. Batch Number, 3. Expiry Date (MM/YYYY), 4. Packaging Type (drip/vial/box/tablet), 5. Quantity. Output strictly in valid JSON format."*
+4. **Data Redaction**: An automated regex scrubber detects and strips any potential Patient Health Information (PHI) before saving logs to Firebase Firestore.
 
 ---
 
-## 3. Voice Input & Speech Telemetry
+## 3. Hands-Free Voice Telemetry & Speech Input
 
-Hands-free command entry allows medical personnel to log inventory adjustments verbally.
+This component lets pharmacists adjust stock and register center markers verbally while handling heavy physical supply packages.
 
 ### Core Technology Stack
-*   **Speech Recognizer**: Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`).
-
-### Core Components & Logic
-*   **Bilingual Speech-to-Text**: Automatically switches language capture context (`en-US` or `hi-IN`) depending on the user's active interface language.
-*   **Natural Language Parse Engine**:
-    *   Extracts numbers using regex patterns (matching English digits and Devnagari words like "दस", "बीस", "पचास").
-    *   Performs string keyword mapping to match coordinates against local health center presets:
-        *   `Najafgarh` $\rightarrow$ Coordinates: `28.6131° N, 76.9861° E`
-        *   `Mansa Ram Park` $\rightarrow$ Coordinates: `28.6224° N, 77.0562° E`
-        *   `Palam Village` $\rightarrow$ Coordinates: `28.5889° N, 77.0831° E`
-        *   `Aya Nagar` $\rightarrow$ Coordinates: `28.4812° N, 77.1354° E`
+*   **Bilingual Speech-to-Text**: HTML5 Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`).
+*   **Parsing Logic**: Specialized regex parser evaluating quantities and locations (supporting Devanagari numerals and Hindi command structures).
