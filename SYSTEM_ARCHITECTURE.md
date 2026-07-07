@@ -57,6 +57,9 @@ HealthLink Daily is architected as an offline-first, client-driven Progressive W
 *   **Speech Recognition**: Browser-native **Web Speech SpeechRecognition API** (safely mapping to `webkitSpeechRecognition` for Chrome and Safari runtimes).
 *   **Media Devices Stream**: HTML5 WebRTC Media Capture API (`navigator.mediaDevices.getUserMedia`) to query and access front- or back-facing device cameras for instant document scanning.
 
+### 2.4 Vector Iconography
+*   **Icon Library**: **Lucide React** (`lucide-react`). Provides high-quality, lightweight, and customizable SVG vector icons (such as `Search`, `Plus`, `AlertTriangle`, `Trash2`, `Compass`, `MapPin`, `Sparkles`, `BrainCircuit`, `Edit2`, and `X`) used extensively across navigation, alerts, buttons, and dashboard summaries. These support dynamic dark-mode color swapping, responsive viewport scaling, and animated pulse or spin decorators.
+
 ---
 
 ## 3. Vertex AI & Gemini 3.5 Flash Subsystems
