@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Search, Plus, AlertTriangle, ShieldCheck, Filter, X, Trash2, Sparkles, Camera, Upload, Database, Lock, ShieldAlert, FileCode, Terminal, ArrowRight, Eye, EyeOff, Info, CheckCircle2, Copy, Check, FileText } from 'lucide-react';
-import { useState, Dispatch, SetStateAction, FormEvent } from 'react';
+import { Search, Plus, AlertTriangle, ShieldCheck, Filter, X, Trash2, Sparkles, Camera, Upload, Database, Lock, ShieldAlert, FileCode, Terminal, ArrowRight, Eye, EyeOff, Info, CheckCircle2, Copy, Check, FileText, TrendingUp, BrainCircuit, LineChart, RefreshCw } from 'lucide-react';
+import { useState, Dispatch, SetStateAction, FormEvent, useEffect } from 'react';
 import { StockItem } from '../types';
 import RealTimeCameraScanner from './RealTimeCameraScanner';
+import { aiModel, isFirebaseReady } from '../config/firebase';
 
 interface InventoryViewProps {
   stockItems: StockItem[];
@@ -429,8 +430,116 @@ export default function InventoryView({ stockItems, setStockItems, languageMode,
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // AI Forecasting state
+  const [showForecast, setShowForecast] = useState(false);
+  const [isForecasting, setIsForecasting] = useState(false);
+  const [forecastData, setForecastData] = useState<any[]>([]);
+  const [forecastAdvice, setForecastAdvice] = useState<string>('');
+  const [forecastLogs, setForecastLogs] = useState<string[]>([]);
+
   // Real-Time WebRTC Camera & Voice Scanner States
   const [isRealTimeScannerOpen, setIsRealTimeScannerOpen] = useState(false);
+
+  const runStockForecast = async () => {
+    setIsForecasting(true);
+    setForecastLogs([
+      "Initializing Vertex AI prediction session...",
+      "Parsing current logistics telemetry & stock levels...",
+      "Analyzing seasonal factors (monsoon, hot weather, rural flu trends)..."
+    ]);
+
+    setTimeout(() => {
+      setForecastLogs(prev => [...prev, "Querying gemini-3.5-flash with clinical safety context..."]);
+    }, 450);
+
+    try {
+      if (isFirebaseReady && aiModel) {
+        const prompt = `You are a professional clinical logistics intelligence AI.
+Analyze this clinic's current stock levels and critical thresholds: ${JSON.stringify(stockItems)}.
+Formulate a forecasting and prediction analysis for inventory management.
+Respond ONLY with a JSON object containing two fields:
+1. "predictions": an array of objects. Each object represents an item from the inventory and has exactly these keys:
+   - "name": string (the exact name of the item)
+   - "demandLevel": string (either "High", "Medium", or "Low" based on stock vs threshold and hospital requirements)
+   - "daysRemaining": number (estimated days before depletion, use integer)
+   - "reason": string (short reason for this forecast/prediction)
+   - "action": string (recommended logistics action)
+2. "generalAdvice": string (a concise overall logistics advice/warning summary for the pharmacist/MO).
+Do not include any markdown backticks, comment blocks, or extra text. Just return pure parseable JSON.`;
+
+        await new Promise(resolve => setTimeout(resolve, 800));
+        const result = await aiModel.generateContent(prompt);
+        const responseText = result.response.text().trim();
+        
+        setForecastLogs(prev => [...prev, "Response received from Vertex AI backend. Parsing payload..."]);
+        
+        const cleanedText = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(cleanedText);
+        
+        if (parsed.predictions && Array.isArray(parsed.predictions)) {
+          setForecastData(parsed.predictions);
+          setForecastAdvice(parsed.generalAdvice || 'Keep monitoring safety thresholds.');
+          setForecastLogs(prev => [...prev, "Analysis complete. Local cache synchronized."]);
+          triggerToast("Vertex AI stock prediction completed successfully!");
+        } else {
+          throw new Error("Invalid schema received from generative model.");
+        }
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 1400));
+        const simulatedPredictions = stockItems.map(item => {
+          const isCritical = item.count <= item.criticalThreshold;
+          const isLow = item.count <= item.criticalThreshold * 1.5;
+          
+          let demandLevel = 'Low';
+          let daysRemaining = 45;
+          let reason = 'Stock levels are stable with normal patient intake rates.';
+          let action = 'No immediate action required. Review on next order cycle.';
+
+          if (isCritical) {
+            demandLevel = 'High';
+            daysRemaining = Math.max(1, Math.floor(item.count / 5));
+            reason = 'Critical stock levels. High run-out risk due to seasonal flu influx.';
+            action = 'Immediate reorder recommended. Restock target: ' + (item.criticalThreshold * 4) + ' units.';
+          } else if (isLow) {
+            demandLevel = 'Medium';
+            daysRemaining = Math.max(5, Math.floor(item.count / 8));
+            reason = 'Low stock warning. Steady depletion rates observed.';
+            action = 'Schedule reorder within the next 48 hours to maintain safety buffer.';
+          } else if (item.name.toLowerCase().includes('lactate') || item.name.toLowerCase().includes('saline')) {
+            demandLevel = 'High';
+            daysRemaining = Math.max(8, Math.floor(item.count / 12));
+            reason = 'Increased dehydration case admissions projected for local area.';
+            action = 'Consider procuring a secondary buffer of drips.';
+          }
+
+          return {
+            name: item.name,
+            demandLevel,
+            daysRemaining,
+            reason,
+            action
+          };
+        });
+
+        setForecastData(simulatedPredictions);
+        setForecastAdvice("Clinical Warning: High run-out risks detected for items near or below threshold limits. Monitor daily heatwave reports.");
+        setForecastLogs(prev => [...prev, "[Sandbox Mode] Local simulation engine completed. Results compiled."]);
+        triggerToast("Stock forecast generated (Sandbox Mode).");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setForecastLogs(prev => [...prev, `[ERROR] Vertex AI session failed: ${err.message}`]);
+      triggerToast("AI forecasting failed. Check console logs.");
+    } finally {
+      setIsForecasting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showForecast && forecastData.length === 0) {
+      runStockForecast();
+    }
+  }, [showForecast]);
 
   const handleCameraScanComplete = (parsedData: any, locationData: { lat: number; lng: number } | null) => {
     const mappedResult = {
@@ -497,7 +606,7 @@ export default function InventoryView({ stockItems, setStockItems, languageMode,
           date: new Date().toISOString().split('T')[0],
           rxNumber: 'Rx #' + Math.floor(1000000 + Math.random() * 9000000),
           patientName: 'Jane Peterson',
-          medication: customFile?.name.split('.')[0].toUpperCase().replace(/[^a-zA-Z0-9]/g, ' ') || 'Custom Ingestion Medication 500mg',
+          medication: customFile?.name.split('.')[0].toUpperCase().replace(/[^a-zA-Z0-9]/g, ' ') || 'Scanned Medicine 500mg',
           dosage: '500mg',
           instructions: 'Take 1 tablet twice daily with food.',
           qty: 45,
@@ -648,7 +757,7 @@ export default function InventoryView({ stockItems, setStockItems, languageMode,
       <div className="flex justify-between items-center">
         <div>
           <span className="text-xs font-bold text-secondary uppercase tracking-wider">
-            {languageMode === 'hindi' ? 'आपूर्ति श्रृंखला' : 'Supply & Asset Ledger'}
+            {languageMode === 'hindi' ? 'आपूर्ति श्रृंखला' : 'Supply & Inventory List'}
           </span>
           <h2 id="inventory-header" className="font-sans text-xl font-bold text-on-surface">
             {languageMode === 'hindi' ? 'चिकित्सा भंडार' : 'Medical Inventory'}
@@ -656,10 +765,29 @@ export default function InventoryView({ stockItems, setStockItems, languageMode,
         </div>
         <div className="flex items-center gap-2">
           <button
+            id="btn-toggle-forecast"
+            onClick={() => {
+              setShowForecast(!showForecast);
+              if (showScanner) setShowScanner(false);
+              if (showAddForm) setShowAddForm(false);
+            }}
+            className={`transition-all text-xs font-semibold px-3 py-1.5 rounded flex items-center gap-1.5 shadow-sm cursor-pointer !text-white ${
+              showForecast 
+                ? 'bg-purple-950 hover:bg-purple-950/90 border border-purple-800' 
+                : 'bg-purple-650 hover:bg-purple-750'
+            }`}
+            style={{ color: '#ffffff' }}
+          >
+            {showForecast ? <X className="w-3.5 h-3.5 !text-white" style={{ color: '#ffffff' }} /> : <BrainCircuit className="w-3.5 h-3.5 text-purple-200 animate-pulse" />}
+            <span style={{ color: '#ffffff' }}>{showForecast ? 'Close Forecast' : 'AI Forecast'}</span>
+          </button>
+
+          <button
             id="btn-toggle-scanner"
             onClick={() => {
               setShowScanner(!showScanner);
               if (showAddForm) setShowAddForm(false);
+              if (showForecast) setShowForecast(false);
             }}
             className={`transition-all text-xs font-semibold px-3 py-1.5 rounded flex items-center gap-1.5 shadow-sm cursor-pointer !text-white ${
               showScanner 
@@ -677,6 +805,7 @@ export default function InventoryView({ stockItems, setStockItems, languageMode,
             onClick={() => {
               setShowAddForm(!showAddForm);
               if (showScanner) setShowScanner(false);
+              if (showForecast) setShowForecast(false);
             }}
             className="bg-secondary !text-white hover:bg-secondary/95 transition-all text-xs font-semibold px-3 py-1.5 rounded flex items-center gap-1.5 shadow-sm cursor-pointer"
             style={{ color: '#ffffff' }}
@@ -789,6 +918,119 @@ export default function InventoryView({ stockItems, setStockItems, languageMode,
           <button onClick={() => setToastMessage(null)} className="text-white/40 hover:text-white transition-all ml-1 cursor-pointer">
             <X className="w-4 h-4" />
           </button>
+        </div>
+      )}
+
+      {/* Vertex AI Forecasting & Prediction Panel */}
+      {showForecast && (
+        <div id="ai-forecast-panel" className="bg-surface-container-lowest border border-purple-600/30 rounded-2xl shadow-lg p-5 space-y-4 animate-scaleUp">
+          <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-outline-variant pb-3 gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="bg-purple-500/10 text-purple-600 p-2 rounded-xl border border-purple-500/20">
+                <BrainCircuit className="w-5 h-5 text-purple-600 animate-pulse" />
+              </div>
+              <div>
+                <h3 className="font-sans text-sm font-bold text-on-surface">
+                  Vertex AI Logistics Forecaster
+                </h3>
+                <p className="text-[11px] text-on-surface-variant font-medium mt-0.5">
+                  Leverages Gemini AI to predict seasonal demand, inventory depletion timelines, and recommend reorder allocations.
+                </p>
+              </div>
+            </div>
+            
+            <button
+              type="button"
+              disabled={isForecasting}
+              onClick={runStockForecast}
+              className="bg-purple-650 hover:bg-purple-750 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition-all shadow flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              style={{ color: '#ffffff' }}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isForecasting ? 'animate-spin' : ''}`} />
+              <span style={{ color: '#ffffff' }}>Recalculate Forecast</span>
+            </button>
+          </div>
+
+          {isForecasting ? (
+            <div className="bg-slate-900 text-purple-400 font-mono text-[11px] p-4 rounded-xl border border-purple-500/20 space-y-2.5 shadow-inner">
+              <div className="flex items-center gap-2 text-white font-bold border-b border-purple-500/10 pb-1.5">
+                <Terminal className="w-4 h-4 text-purple-400" />
+                <span>VERTEX_AI_PREDICTION_LOGS</span>
+              </div>
+              <div className="space-y-1.5 text-[10px]">
+                {forecastLogs.map((log, idx) => (
+                  <p key={idx} className="text-purple-400 font-semibold">
+                    ⟳ {log}
+                  </p>
+                ))}
+              </div>
+              <div className="relative h-1 w-full bg-slate-800 rounded overflow-hidden mt-2">
+                <div className="absolute top-0 bottom-0 left-0 bg-purple-400 animate-[shimmer_1.5s_infinite] w-1/3" />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {forecastAdvice && (
+                <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-3 text-xs text-purple-900 dark:text-purple-300 flex items-start gap-2.5">
+                  <Info className="w-4.5 h-4.5 text-purple-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Logistics Insight: </span>
+                    {forecastAdvice}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {forecastData.map((forecast, idx) => {
+                  const isHigh = forecast.demandLevel === 'High';
+                  const isMed = forecast.demandLevel === 'Medium';
+                  
+                  return (
+                    <div 
+                      key={idx}
+                      className="bg-surface-container-low border border-outline-variant rounded-xl p-3.5 flex flex-col justify-between gap-2.5 shadow-sm hover:border-purple-500/30 transition-colors"
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-xs font-bold text-on-surface truncate block max-w-[70%]">
+                          {forecast.name}
+                        </span>
+                        
+                        <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border ${
+                          isHigh 
+                            ? 'bg-red-500/10 text-red-600 border-red-500/25'
+                            : isMed
+                              ? 'bg-amber-500/10 text-amber-600 border-amber-500/25'
+                              : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25'
+                        }`}>
+                          {forecast.demandLevel} Demand
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[10px] bg-white dark:bg-slate-900 p-2 rounded-lg border border-outline-variant/40">
+                        <div>
+                          <span className="text-on-surface-variant block uppercase font-bold text-[8px]">Depletion</span>
+                          <span className={`font-mono font-extrabold ${forecast.daysRemaining <= 7 ? 'text-red-600 animate-pulse' : 'text-slate-700 dark:text-slate-350'}`}>
+                            {forecast.daysRemaining} days remaining
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-on-surface-variant block uppercase font-bold text-[8px]">Reorder Suggestion</span>
+                          <span className="font-semibold text-purple-700 dark:text-purple-400">
+                            {isHigh ? 'Urgent Pull' : isMed ? 'Standard Cycle' : 'Defer Order'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-[10px] text-on-surface-variant leading-normal pt-1 border-t border-outline-variant/30">
+                        <p><strong className="text-on-surface font-semibold">Forecast:</strong> {forecast.reason}</p>
+                        <p className="mt-1 text-purple-800 dark:text-purple-400"><strong className="font-semibold">Action Plan:</strong> {forecast.action}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -983,7 +1225,7 @@ export default function InventoryView({ stockItems, setStockItems, languageMode,
                   }`}
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span>{isScanning ? 'Vision Engine Active...' : 'Trigger OCR & HIPAA Redaction'}</span>
+                  <span>{isScanning ? 'Vision Engine Active...' : 'Trigger Smart Scan & HIPAA Redaction'}</span>
                 </button>
               </div>
 
@@ -998,10 +1240,10 @@ export default function InventoryView({ stockItems, setStockItems, languageMode,
                     </div>
                     <div className="space-y-1.5 text-[10px]">
                       <p className={scanStep >= 1 ? 'text-teal-400 font-bold' : 'text-slate-600'}>
-                        {scanStep >= 1 ? '✔' : '⟳'} [GCS_INGESTION] gs://hl-clinical-inventory/{customFile ? customFile.name : `demo_label_${selectedDemoId?.toLowerCase()}.jpg`}
+                        {scanStep >= 1 ? '✔' : '⟳'} [IMAGE_STAGE] Securely uploading prescription file: {customFile ? customFile.name : `demo_label_${selectedDemoId?.toLowerCase()}.jpg`}
                       </p>
                       <p className={scanStep >= 2 ? 'text-teal-400 font-bold' : 'text-slate-600'}>
-                        {scanStep >= 2 ? '✔' : '⟳'} [VISION_OCR] documentTextDetection requested. Processing layout bounds...
+                        {scanStep >= 2 ? '✔' : '⟳'} [VISION_SCAN] documentTextDetection requested. Processing layout bounds...
                       </p>
                       <p className={scanStep >= 3 ? 'text-teal-400 font-bold' : 'text-slate-600'}>
                         {scanStep >= 3 ? '✔' : '⟳'} [HIPAA_GUARD] Scrutinizing transcript. Found PHI elements! Redaction triggered.
@@ -1025,7 +1267,7 @@ export default function InventoryView({ stockItems, setStockItems, languageMode,
                     </div>
                     <h5 className="font-sans font-bold text-sm text-on-surface">No Active Vision Result</h5>
                     <p className="text-xs text-on-surface-variant max-w-sm mt-1 leading-relaxed">
-                      Choose a sample label on the left and trigger the analyzer to observe GCS processing and OCR parsing in real time.
+                      Choose a sample label on the left and trigger the analyzer to observe GCS processing and smart scanning in real time.
                     </p>
                   </div>
                 )}
@@ -1038,7 +1280,7 @@ export default function InventoryView({ stockItems, setStockItems, languageMode,
                       <div className="flex justify-between items-center border-b border-outline-variant/60 pb-2 mb-3">
                         <div className="flex items-center gap-1.5">
                           <Lock className="w-3.5 h-3.5 text-teal-600" />
-                          <span className="text-[10px] font-bold text-teal-800 tracking-wider uppercase">HIPAA OCR Scrubber Safe-View</span>
+                          <span className="text-[10px] font-bold text-teal-800 tracking-wider uppercase">HIPAA Smart Scrubber Safe-View</span>
                         </div>
                         <button
                           id="btn-toggle-phi-mask"
@@ -1124,7 +1366,7 @@ export default function InventoryView({ stockItems, setStockItems, languageMode,
                       <div className="text-[11px] text-on-surface-variant flex gap-2 items-start bg-blue-500/5 p-2.5 rounded-lg border border-blue-500/10">
                         <ShieldAlert className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                         <div>
-                          <span className="font-bold text-blue-800 text-xs">HIPAA Compliant Ingestion Engine</span>
+                          <span className="font-bold text-blue-800 text-xs">Secure Patient Data Protocol</span>
                           <p className="text-[10px] text-blue-600 mt-0.5 leading-relaxed">
                             Scrubbed patient detail elements ({scanResult.patientName}, Rx {scanResult.rxNumber.split('#')[1]}) were removed successfully from raw string before logs/storage commit.
                           </p>

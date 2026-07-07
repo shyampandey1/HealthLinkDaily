@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Camera, X, RefreshCw, MapPin, Mic, MicOff, Sparkles, AlertCircle, Check, Play, Square } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
+import { aiModel } from '../config/firebase';
 
 interface RealTimeCameraScannerProps {
   isOpen: boolean;
@@ -238,12 +238,6 @@ export default function RealTimeCameraScanner({ isOpen, onClose, onScanComplete 
       }
 
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(playErr => {
-          console.error('Video element play() was interrupted:', playErr);
-        });
-      }
       setCameraState('active');
     } catch (err: any) {
       console.error('Camera stream access failed:', err);
@@ -254,6 +248,17 @@ export default function RealTimeCameraScanner({ isOpen, onClose, onScanComplete 
       }
     }
   };
+
+  useEffect(() => {
+    if (cameraState === 'active' && streamRef.current && videoRef.current) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+        videoRef.current.play().catch(playErr => {
+          console.error('Video play error:', playErr);
+        });
+      }
+    }
+  }, [cameraState]);
 
   // Lifecycle effects
   useEffect(() => {
@@ -288,18 +293,15 @@ export default function RealTimeCameraScanner({ isOpen, onClose, onScanComplete 
     onClose();
   };
 
-  // Helper: Call Gemini AI natively from frontend
+  // Helper: Call Smart Vision natively from frontend
   const analyzeImageWithGemini = async (base64Image: string) => {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY is not configured in the environment.");
+    if (!aiModel) {
+      throw new Error("Smart Vision model is not initialized.");
     }
     
-    // The @google/genai SDK requires the raw base64 string without the data URI prefix
+    // The SDK requires the raw base64 string without the data URI prefix
     const base64Data = base64Image.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
 
-    const ai = new GoogleGenAI({ apiKey });
-    
     const prompt = `You are a medical inventory assistant. 
 Analyze this image of a medicine bottle, IV bag, or medical supply.
 Extract the following details and return ONLY a valid JSON object with exactly these keys:
@@ -311,29 +313,22 @@ Extract the following details and return ONLY a valid JSON object with exactly t
 
 Do not include any markdown formatting, backticks, or extra text. Just the raw JSON object.`;
 
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [
-            { text: prompt },
-            {
-                inlineData: {
-                    mimeType: 'image/jpeg',
-                    data: base64Data
-                }
-            }
-        ],
-        config: {
-            temperature: 0.1,
-            responseMimeType: "application/json"
+    const response = await aiModel.generateContent([
+      prompt,
+      {
+        inlineData: {
+          mimeType: 'image/jpeg',
+          data: base64Data
         }
-    });
+      }
+    ]);
 
-    const text = response.text || "{}";
-    const resultData = JSON.parse(text);
+    const text = response.response.text() || "{}";
+    const resultData = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
     return {
         success: true,
         data: resultData,
-        metadata: { method: 'Gemini AI Vision (Serverless)' }
+        metadata: { method: 'Smart Vision (Serverless)' }
     };
   };
 
@@ -361,7 +356,7 @@ Do not include any markdown formatting, backticks, or extra text. Just the raw J
         // Fetch location details right at scan completion
         const currentLocation = gpsLocation || { lat: 28.6139, lng: 77.2090 };
 
-        // Process with Gemini AI Serverless
+        // Process with Smart Vision Serverless
         const result = await analyzeImageWithGemini(base64Image);
         
         if (result.success && result.data) {
@@ -420,7 +415,7 @@ Do not include any markdown formatting, backticks, or extra text. Just the raw J
         const base64Image = reader.result as string;
         const currentLocation = gpsLocation || { lat: 28.6139, lng: 77.2090 };
 
-        // Process with Gemini AI Serverless
+        // Process with Smart Vision Serverless
         const result = await analyzeImageWithGemini(base64Image);
         
         if (result.success && result.data) {
@@ -487,7 +482,7 @@ Do not include any markdown formatting, backticks, or extra text. Just the raw J
                 )}
               </h3>
               <p className="text-[10px] text-slate-400 font-medium">
-                Target medicine boxes, vials, or drip bags for high-fidelity OCR scanning.
+                Target medicine boxes, vials, or drip bags for high-fidelity smart scanning.
               </p>
             </div>
           </div>
@@ -591,10 +586,10 @@ Do not include any markdown formatting, backticks, or extra text. Just the raw J
               
               <div className="text-center space-y-1 max-w-sm">
                 <h5 className="font-bold text-sm text-white flex items-center justify-center gap-1.5">
-                  Analyzing Label via MediScan Vision (Gemini)
+                  Analyzing Label via MediScan Vision
                 </h5>
                 <p className="text-xs text-slate-400 animate-pulse">
-                  Converting base64 payload, running OCR and isolating clinical metadata...
+                  Converting image payload, running smart detection and isolating clinical metadata...
                 </p>
               </div>
 

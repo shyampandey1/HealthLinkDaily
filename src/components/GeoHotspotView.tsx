@@ -169,11 +169,10 @@ export default function GeoHotspotView({
 
   // Quick preset locations in NCR for simulator
   const presets = [
-    { name: 'Noida PHC Sector 62', lat: 28.5355, lng: 77.3910 },
-    { name: 'Gurugram Base Clinic', lat: 28.4595, lng: 77.0266 },
-    { name: 'Rohtak Central Ward', lat: 28.8955, lng: 76.6066 },
-    { name: 'Faridabad Sub-Station', lat: 28.4089, lng: 77.3178 },
-    { name: 'Bahadurgarh Dispensary', lat: 28.6924, lng: 76.9240 }
+    { name: 'RHTC Najafgarh', lat: 28.6131, lng: 76.9861 },
+    { name: 'PUHC Mansa Ram Park', lat: 28.6224, lng: 77.0562 },
+    { name: 'PHC Palam Village', lat: 28.5889, lng: 77.0831 },
+    { name: 'PUHC Aya Nagar', lat: 28.4812, lng: 77.1354 }
   ];
 
   const parseVoiceCommand = (text: string) => {
@@ -294,10 +293,10 @@ export default function GeoHotspotView({
           <button
             id="btn-toggle-sim-panel"
             onClick={() => setShowSimPanel(!showSimPanel)}
-            className="bg-primary hover:bg-black !text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+            className="bg-secondary text-on-secondary hover:opacity-90 text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Terminal className="w-3.5 h-3.5" />
-            <span>{showSimPanel ? 'Hide Sim Controls' : 'Simulate Geotag'}</span>
+            <span>{showSimPanel ? 'Hide Form' : 'Test Location'}</span>
           </button>
         </div>
       </div>
@@ -308,10 +307,10 @@ export default function GeoHotspotView({
           <div className="flex justify-between items-center border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4.5 h-4.5 text-yellow-400" />
-              <span className="text-xs font-bold text-white uppercase tracking-wider">AI Supply Drop & Voice Telemetry Cockpit</span>
+              <span className="text-xs font-bold text-white uppercase tracking-wider">Add Test Location</span>
             </div>
             <span className="text-[9px] bg-emerald-500/10 text-emerald-400 font-mono border border-emerald-500/20 px-2 py-0.5 rounded">
-              ADMIN SIMULATOR
+              TEST MODE
             </span>
           </div>
 
@@ -449,12 +448,12 @@ export default function GeoHotspotView({
                 {isSimulating ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Transmitting Telemetry...</span>
+                    <span>Adding Location...</span>
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Deploy simulated Hotspot Geotag</span>
+                    <span>Add Location</span>
                   </>
                 )}
               </button>
@@ -736,7 +735,7 @@ export default function GeoHotspotView({
 
                 {/* Metadata Operators details */}
                 <div className="flex justify-between items-center text-[10px] text-on-surface-variant/80 font-medium">
-                  <span>HIPAA Ingestion: Verified</span>
+                  <span>Data Security: Verified</span>
                   <span>Op: {selectedScan.operator}</span>
                 </div>
 
@@ -766,7 +765,7 @@ export default function GeoHotspotView({
             Verified Optical Geotag Registry
           </span>
           <span className="text-[9px] text-on-surface-variant font-mono">
-            SECURED LEDGER • HIPAA-COMPLIANT
+            SECURED DATABASE • PRIVACY GUARANTEED
           </span>
         </div>
 
@@ -835,6 +834,125 @@ export default function GeoHotspotView({
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Primary Care Centre Directory Dashboard */}
+      <div className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl shadow-sm p-5 mt-6 space-y-4">
+        <div>
+          <h3 className="font-sans text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+            <Compass className="w-4 h-4 text-secondary animate-pulse" />
+            <span>{languageMode === 'hindi' ? 'प्राथमिक स्वास्थ्य केंद्र निर्देशिका' : 'Primary Care Centre Directory'}</span>
+          </h3>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+            {languageMode === 'hindi' 
+              ? 'क्षेत्रीय प्राथमिक स्वास्थ्य केंद्रों (PHC) और सामुदायिक स्वास्थ्य केंद्रों (CHC) की सूची और उनकी कनेक्टिविटी।' 
+              : 'List and transit connectivity of local Primary Health Centres (PHC) and Community Health Centres (CHC).'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            {
+              name: 'Rural Health Training Centre (RHTC)',
+              subName: 'Najafgarh',
+              type: 'RHTC',
+              lat: 28.6131,
+              lng: 76.9861,
+              address: 'Plot No. 12, Najafgarh Extension, Agarwal Colony, Najafgarh, New Delhi - 110043',
+              transit: 'Magenta & Blue Line (Nawada Metro)',
+              status: 'Operational',
+              statusColor: 'bg-emerald-500 text-white'
+            },
+            {
+              name: 'Primary Urban Health Centre (PUHC)',
+              subName: 'Mansa Ram Park',
+              type: 'PUHC',
+              lat: 28.6224,
+              lng: 77.0562,
+              address: 'Block D, Mansa Ram Park, Uttam Nagar, New Delhi - 110059',
+              transit: 'Blue Line (Nawada / Uttam Nagar West)',
+              status: 'Operational',
+              statusColor: 'bg-emerald-500 text-white'
+            },
+            {
+              name: 'Primary Health Center (PHC)',
+              subName: 'Palam Village',
+              type: 'PHC',
+              lat: 28.5889,
+              lng: 77.0831,
+              address: 'Sector-7, Dwarka Road, Raj Nagar, New Delhi - 110045',
+              transit: 'Magenta Line (Dabri Mor / Palam Metro)',
+              status: 'Normal',
+              statusColor: 'bg-emerald-500 text-white'
+            },
+            {
+              name: 'Primary Urban Health Centre (PUHC)',
+              subName: 'Aya Nagar',
+              type: 'PUHC',
+              lat: 28.4812,
+              lng: 77.1354,
+              address: 'Ghoda Mohalla, Phase 1, Aya Nagar, New Delhi - 110047',
+              transit: 'Yellow Line (Arjan Garh Metro)',
+              status: 'Operational',
+              statusColor: 'bg-emerald-500 text-white'
+            }
+          ].map((center) => (
+            <div 
+              key={center.name + center.subName}
+              className="bg-surface-container-low border border-outline-variant p-4 rounded-xl flex flex-col justify-between hover:shadow-md transition-all relative group overflow-hidden"
+            >
+              <div className="space-y-2">
+                <div className="flex justify-between items-start">
+                  <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container tracking-wide">
+                    {center.type}
+                  </span>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    {center.status}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-sans text-xs font-bold text-on-surface leading-tight">
+                    {center.name}
+                  </h4>
+                  <p className="text-[11px] font-semibold text-secondary mt-0.5">
+                    {center.subName}
+                  </p>
+                </div>
+                
+                <hr className="border-outline-variant/30 animate-pulse" />
+
+                <div className="space-y-1.5 text-[10px]">
+                  <p className="text-on-surface-variant leading-relaxed">
+                    <strong className="text-on-surface text-[9px] uppercase tracking-wider block">Address</strong>
+                    {center.address}
+                  </p>
+                  <p className="text-on-surface-variant leading-relaxed">
+                    <strong className="text-on-surface text-[9px] uppercase tracking-wider block">Transit / Metro</strong>
+                    {center.transit}
+                  </p>
+                  <p className="font-mono text-[9px] text-slate-500 dark:text-slate-400">
+                    Coords: {center.lat}, {center.lng}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-3">
+                <button
+                  onClick={() => {
+                    const matchedScan = geoScans.find(s => s.lat === center.lat && s.lng === center.lng);
+                    if (matchedScan) {
+                      setSelectedScanId(matchedScan.id);
+                    }
+                  }}
+                  className="w-full bg-surface-container-high hover:bg-secondary hover:text-white transition-all text-on-surface font-bold text-[10px] py-1.5 rounded-lg border border-outline-variant/60 cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <MapPin className="w-3 h-3 text-rose-500 group-hover:text-white transition-all" />
+                  <span>Locate on Map</span>
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

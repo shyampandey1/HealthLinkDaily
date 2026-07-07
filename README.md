@@ -17,13 +17,15 @@ HealthLink Daily is an advanced web application designed to manage medical suppl
 - **Dynamic Radar & Hotspots**: Interactive SVG radar grid for visual supply monitoring.
 - **Real Google Maps Integration**: Click on any radar pin to seamlessly load an interactive, real-world Google Map of the selected coordinates.
 - **Modern UI & Theming**: Built with Tailwind CSS v4 featuring flawless Dark/Light mode toggling with glassmorphism micro-interactions.
+- **Mobile-First Experience**: Progressive Web App (PWA) compatible with an intuitive mobile sidebar navigation drawer.
+- **Legal & Compliance**: Built-in Terms and Conditions and Privacy Policy modals integrated securely into the user registration flow.
 - **Real-Time Database**: Powered by Firebase Firestore for robust patient and inventory data tracking.
 
 ## 🛠️ Technology Stack
 - **Frontend**: React, TypeScript, Vite
 - **Styling**: Tailwind CSS v4, Framer Motion (Animations), Lucide React (Icons)
 - **Backend/Services**: Firebase Auth, Firebase Firestore, Firebase Hosting
-- **AI**: Google Gemini AI (via `@google/genai` API)
+- **AI**: Google Smart Vision via Firebase Vertex AI SDK (`firebase/ai`)
 
 ## 🌐 Live Deployment
 This project is automatically deployed and hosted natively on Firebase Hosting.

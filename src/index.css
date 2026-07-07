@@ -24,6 +24,17 @@
   --color-on-secondary: #ffffff;
   --color-secondary-container: #86f2e4;
   --color-on-secondary-container: #006f66;
+
+  --animate-slide-right: slideRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  @keyframes slideRight {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
 }
 
 /* Custom scrollbar to keep it looking clean and professional */

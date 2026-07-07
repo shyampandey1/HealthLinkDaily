@@ -13,7 +13,7 @@ import {
   query, 
   orderBy 
 } from 'firebase/firestore';
-import { StockItem, Patient, StaffMember, DailyReport } from '../types';
+import { StockItem, Patient, StaffMember, DailyReport, CentreData } from '../types';
 
 /**
  * Fetch all clinical inventory supplies from Firestore
@@ -179,6 +179,42 @@ export async function saveFirestoreReport(report: DailyReport): Promise<void> {
     await setDoc(docRef, report, { merge: true });
   } catch (err) {
     console.error('[Firestore Service] Error saving shift report:', err);
+    throw err;
+  }
+}
+
+/**
+ * Fetch all care centres from Firestore
+ */
+export async function getFirestoreCentres(): Promise<CentreData[]> {
+  if (!isFirebaseReady || !db) return [];
+  try {
+    const querySnapshot = await getDocs(collection(db, 'care_centres'));
+    const centres: CentreData[] = [];
+    querySnapshot.forEach((docSnap) => {
+      centres.push({ id: docSnap.id, ...docSnap.data() } as CentreData);
+    });
+    return centres;
+  } catch (err) {
+    console.error('[Firestore Service] Error fetching centres:', err);
+    throw err;
+  }
+}
+
+/**
+ * Save or update care centre in Firestore
+ */
+export async function saveFirestoreCentre(centre: CentreData): Promise<void> {
+  if (!isFirebaseReady || !db) return;
+  try {
+    // If no id, create a new doc ref with auto id
+    const docRef = centre.id ? doc(db, 'care_centres', centre.id) : doc(collection(db, 'care_centres'));
+    const dataToSave = { ...centre, id: docRef.id };
+    await setDoc(docRef, dataToSave, { merge: true });
+    // Update the object with the generated ID so the caller has it
+    centre.id = docRef.id;
+  } catch (err) {
+    console.error('[Firestore Service] Error saving centre:', err);
     throw err;
   }
 }

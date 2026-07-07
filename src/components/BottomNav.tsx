@@ -5,7 +5,7 @@
 
 import { ClipboardList, Package, Users, UserCheck, MapPin } from 'lucide-react';
 
-export type TabType = 'reports' | 'inventory' | 'patients' | 'staff' | 'geo-hotspot' | 'settings';
+export type TabType = 'reports' | 'inventory' | 'patients' | 'staff' | 'geo-hotspot' | 'settings' | 'about';
 
 interface BottomNavProps {
   activeTab: TabType;
@@ -25,8 +25,6 @@ export default function BottomNav({ activeTab, setActiveTab, languageMode }: Bot
         return languageMode === 'hindi' ? 'मरीज' : 'Patients';
       case 'staff':
         return languageMode === 'hindi' ? 'स्टाफ' : 'Staff';
-      case 'geo-hotspot':
-        return languageMode === 'hindi' ? 'हॉटस्पॉट' : 'Hotspots';
     }
   };
 
@@ -35,13 +33,12 @@ export default function BottomNav({ activeTab, setActiveTab, languageMode }: Bot
     { id: 'inventory' as TabType, icon: Package, label: getLabel('inventory') },
     { id: 'patients' as TabType, icon: Users, label: getLabel('patients') },
     { id: 'staff' as TabType, icon: UserCheck, label: getLabel('staff') },
-    { id: 'geo-hotspot' as TabType, icon: MapPin, label: getLabel('geo-hotspot') },
   ];
 
   return (
     <nav 
       id="bottom-navigation-bar"
-      className="bg-surface-container-lowest/95 backdrop-blur-md fixed bottom-0 left-0 right-0 w-full z-40 h-20 border-t border-outline-variant shadow-lg flex md:hidden justify-between items-center px-1 pb-4 shrink-0 select-none transition-colors duration-200 overflow-x-auto no-scrollbar"
+      className="bg-surface-container-lowest/95 backdrop-blur-md fixed bottom-0 left-0 right-0 w-full z-40 h-20 border-t border-outline-variant shadow-lg flex md:hidden justify-center gap-10 items-center px-4 pb-4 shrink-0 select-none transition-colors duration-200 overflow-x-auto no-scrollbar"
     >
       {navItems.map((item) => {
         const Icon = item.icon;

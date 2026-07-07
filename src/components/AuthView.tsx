@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Lock, User, Shield, Building, Hospital, Key, Mail, Phone, UserCheck, Users, Stethoscope, ChevronRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { auth, isFirebaseReady, googleProvider } from '../config/firebase';
+import PrivacyPolicyModal from './PrivacyPolicyModal';
 
 interface AuthViewProps {
   onLoginSuccess: (user: any, token: string) => void;
@@ -13,6 +14,8 @@ interface AuthViewProps {
 }
 
 export default function AuthView({ onLoginSuccess, languageMode }: AuthViewProps) {
+  const [acceptedAgreement, setAcceptedAgreement] = useState(false);
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [registerType, setRegisterType] = useState<'hospital' | 'staff' | 'patient'>('staff');
   
@@ -296,6 +299,12 @@ export default function AuthView({ onLoginSuccess, languageMode }: AuthViewProps
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!acceptedAgreement) {
+      setErrorMsg("You must accept the Legal Agreement & Privacy Policy to register.");
+      return;
+    }
+
     setIsLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
@@ -922,7 +931,7 @@ export default function AuthView({ onLoginSuccess, languageMode }: AuthViewProps
                           type="text" value={patBed} onChange={(e) => setPatBed(e.target.value)}
                           className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2.5 text-xs font-semibold placeholder-slate-400 focus:outline-none focus:border-teal-500 font-mono"
                           placeholder="e.g. B2"
-                          disabled={patType !== 'IPD'}
+                          disabled={false}
                         />
                       </div>
 
@@ -997,6 +1006,28 @@ export default function AuthView({ onLoginSuccess, languageMode }: AuthViewProps
                 )}
               </div>
 
+              {/* Agreement Acceptance */}
+              <div className="flex items-start gap-3 px-1 py-2 mt-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                <input
+                  type="checkbox"
+                  id="checkbox-accept-agreement"
+                  checked={acceptedAgreement}
+                  onChange={(e) => setAcceptedAgreement(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded accent-teal-600 cursor-pointer shrink-0"
+                />
+                <label htmlFor="checkbox-accept-agreement" className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed cursor-pointer select-none">
+                  I have read and accept the{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowPrivacyPolicy(true)}
+                    className="text-teal-600 dark:text-teal-400 font-bold hover:underline bg-transparent border-none p-0 cursor-pointer"
+                  >
+                    Legal Agreement & Privacy Policy
+                  </button>
+                  {' '}of HealthLink Daily.
+                </label>
+              </div>
+
               <button
                 type="submit"
                 disabled={isLoading}
@@ -1032,6 +1063,11 @@ export default function AuthView({ onLoginSuccess, languageMode }: AuthViewProps
           )}
         </div>
       </div>
+
+      <PrivacyPolicyModal
+        isOpen={showPrivacyPolicy}
+        onClose={() => setShowPrivacyPolicy(false)}
+      />
     </div>
   );
 }

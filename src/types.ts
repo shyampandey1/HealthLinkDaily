@@ -51,3 +51,17 @@ export interface DailyReport {
   submittedAt: string; // ISO timestamp
   notes?: string;
 }
+
+export interface CentreData {
+  id?: string;
+  name: string;
+  subName: string;
+  type: string;
+  lat: number | null;
+  lng: number | null;
+  address: string;
+  transit: string;
+  status: string;
+  contact: string;
+  beds: string;
+}

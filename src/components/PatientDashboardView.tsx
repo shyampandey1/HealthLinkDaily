@@ -133,7 +133,7 @@ export default function PatientDashboardView({
         {/* Left column: Vitals cards (7 cols) */}
         <div className="lg:col-span-8 space-y-6">
           <h2 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block">
-            Health Log & Vital Telemetry
+            Health Log & Vitals
           </h2>
 
           {/* Vitals grid */}
@@ -272,7 +272,7 @@ export default function PatientDashboardView({
                 }`} />
                 <div className="text-[10px]">
                   <span className="font-bold text-slate-800 dark:text-slate-200">Physician Consultation</span>
-                  <p className="text-slate-500 dark:text-slate-450 mt-0.5 text-[9px]">Ingested clinical notes into central directory.</p>
+                  <p className="text-slate-500 dark:text-slate-450 mt-0.5 text-[9px]">Saved clinical notes to secure database.</p>
                 </div>
               </div>
 
@@ -329,8 +329,8 @@ export default function PatientDashboardView({
 
           {/* HIPAA Safety Notice */}
           <div className="bg-slate-100 dark:bg-slate-900/60 rounded-xl p-4 border border-slate-200 dark:border-slate-800 text-[10px] text-slate-500 dark:text-slate-400 space-y-1.5">
-            <span className="font-bold text-slate-700 dark:text-slate-350 block uppercase tracking-wider">🔒 HIPAA SECURED GATEWAY</span>
-            <p className="leading-relaxed">This patient portal utilizes TLS 1.3 encryption and stores clinical diagnostics strictly on a HIPAA-compliant localized ledger. Your contact and vitals are encrypted at rest.</p>
+            <span className="font-bold text-slate-700 dark:text-slate-350 block uppercase tracking-wider">🔒 SECURED PORTAL</span>
+            <p className="leading-relaxed">This patient portal uses secure encryption and stores your records strictly in a secure database. Your contact and vitals are fully protected.</p>
           </div>
         </div>
 

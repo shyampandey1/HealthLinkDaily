@@ -4,8 +4,10 @@
  */
 
 import { useState, useEffect } from 'react';
-import { ClipboardList, Package, Users, UserCheck, Menu, Activity, ShieldAlert, ChevronLeft, ChevronRight, Sun, Moon, Compass, LogOut, Settings } from 'lucide-react';
+import { ClipboardList, Package, Users, UserCheck, Menu, Activity, ShieldAlert, ChevronLeft, ChevronRight, Sun, Moon, Compass, LogOut, Settings, Info } from 'lucide-react';
 import Header from './components/Header';
+import MobileSidebar from './components/MobileSidebar';
+import AboutView from './components/AboutView';
 import BottomNav, { TabType } from './components/BottomNav';
 import DailyReportView from './components/DailyReportView';
 import InventoryView from './components/InventoryView';
@@ -108,6 +110,7 @@ const initialGeoScans: GeoScan[] = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('reports');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [languageMode, setLanguageMode] = useState<'english' | 'hindi' | 'bilingual'>('bilingual');
 
   // States for sidebar collapsible behavior and dark mode
@@ -580,6 +583,15 @@ export default function App() {
 
           {/* Action Row */}
           <div className={`flex items-center ${isSidebarCollapsed ? 'flex-col gap-2' : 'justify-around'} pt-1`}>
+            {/* Info Icon (About App) */}
+            <button
+              id="sidebar-btn-open-about"
+              onClick={() => setActiveTab('about')}
+              title="About App & User Guide"
+              className="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-colors border border-outline-variant/30 cursor-pointer"
+            >
+              <Info className="w-4.5 h-4.5" />
+            </button>
             {/* Gear Icon (Settings) */}
             <button
               id="sidebar-btn-open-info"
@@ -605,12 +617,22 @@ export default function App() {
 
       {/* Right Content Pane */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
+        <MobileSidebar 
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          currentUser={currentUser}
+          handleLogout={handleLogout}
+          languageMode={languageMode}
+        />
+        
         {/* Top Application Header */}
         <Header 
           languageMode={languageMode} 
           setLanguageMode={setLanguageMode} 
-          isInfoOpen={activeTab === 'settings'}
-          onToggleInfo={() => setActiveTab(activeTab === 'settings' ? 'reports' : 'settings')}
+          isInfoOpen={isMobileMenuOpen}
+          onToggleInfo={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           isDarkMode={isDarkMode}
           setIsDarkMode={setIsDarkMode}
         />
@@ -702,6 +724,10 @@ export default function App() {
                 languageMode={languageMode}
                 openPrompt={openPrompt}
               />
+            )}
+
+            {activeTab === 'about' && (
+              <AboutView languageMode={languageMode} />
             )}
           </main>
         )}

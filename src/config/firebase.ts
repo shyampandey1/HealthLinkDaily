@@ -5,7 +5,8 @@
 
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { getAI, getGenerativeModel, VertexAIBackend } from "firebase/ai";
 
 // Environment variables template for Firebase
 const firebaseConfig = {
@@ -27,6 +28,8 @@ export const isFirebaseReady = !!(
 let app;
 let auth: any = null;
 let db: any = null;
+let aiInstance: any = null;
+let aiModel: any = null;
 const googleProvider = new GoogleAuthProvider();
 
 if (isFirebaseReady) {
@@ -34,6 +37,20 @@ if (isFirebaseReady) {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
     db = getFirestore(app);
+    
+    // Enable offline persistence
+    enableIndexedDbPersistence(db).catch((err) => {
+      if (err.code == 'failed-precondition') {
+        console.warn('Multiple tabs open, persistence can only be enabled in one tab at a a time.');
+      } else if (err.code == 'unimplemented') {
+        console.warn('The current browser does not support all of the features required to enable persistence');
+      }
+    });
+    
+    // Initialize Vertex AI
+    aiInstance = getAI(app, { backend: new VertexAIBackend('global') });
+    aiModel = getGenerativeModel(aiInstance, { model: "gemini-3.5-flash" });
+    
     console.log('[Firebase Connection] Connected successfully to Cloud project:', firebaseConfig.projectId);
   } catch (err) {
     console.error('[Firebase Connection] Failed to initialize SDK:', err);
@@ -44,4 +61,4 @@ if (isFirebaseReady) {
   );
 }
 
-export { app, auth, db, googleProvider };
+export { app, auth, db, googleProvider, aiInstance, aiModel };

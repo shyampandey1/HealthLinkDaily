@@ -36,9 +36,7 @@ export default function Header({ languageMode, setLanguageMode, isInfoOpen, onTo
         id="btn-menu-info"
         onClick={onToggleInfo}
         aria-label="Application Information"
-        className={`${
-          isInfoOpen ? 'fixed top-1 left-6 z-[60]' : 'relative'
-        } flex md:hidden flex-col justify-center items-center w-10 h-10 hover:bg-surface-container/50 transition-all duration-200 rounded-full text-on-surface-variant cursor-pointer z-50`}
+        className="relative flex md:hidden flex-col justify-center items-center w-10 h-10 hover:bg-surface-container/50 transition-all duration-200 rounded-full text-on-surface-variant cursor-pointer z-50"
       >
         <span 
           className={`h-0.5 w-5 bg-current rounded-full transition-all duration-300 ${

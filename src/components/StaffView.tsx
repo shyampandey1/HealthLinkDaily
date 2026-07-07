@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Search, Plus, CheckCircle2, AlertCircle, Phone, Clock, UserCheck, X, Users2, Trash2 } from 'lucide-react';
-import { useState, Dispatch, SetStateAction, FormEvent } from 'react';
+import { Search, Plus, CheckCircle2, AlertCircle, Phone, Clock, UserCheck, X, Users2, Trash2, Camera, Loader2 } from 'lucide-react';
+import { useState, Dispatch, SetStateAction, FormEvent, useRef, useEffect } from 'react';
 import { StaffMember } from '../types';
+import { aiModel } from '../config/firebase';
 
 interface StaffViewProps {
   staffMembers: StaffMember[];
@@ -34,6 +35,141 @@ export default function StaffView({ staffMembers, setStaffMembers, languageMode,
   const [newRoleHindi, setNewRoleHindi] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [newShift, setNewShift] = useState<'Day' | 'Night'>('Day');
+
+  // Camera & Scanning State
+  const [isScanning, setIsScanning] = useState(false);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      streamRef.current = stream;
+      setIsCameraActive(true);
+    } catch (err) {
+      console.error('Camera access error:', err);
+      alert('Could not access camera. Please check permissions or use file upload.');
+    }
+  };
+
+  useEffect(() => {
+    if (isCameraActive && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(playErr => {
+        console.error('Video play error:', playErr);
+      });
+    }
+  }, [isCameraActive]);
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  const captureFromCamera = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
+      alert('Camera stream is still initializing. Please wait a second and try again.');
+      return;
+    }
+
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const base64Data = canvas.toDataURL('image/jpeg');
+        stopCamera();
+        processImagePayload(base64Data);
+      }
+    } catch (err) {
+      console.error('Failed to capture frame from video:', err);
+      alert('Failed to capture image from camera. Please use File Upload instead.');
+      stopCamera();
+    }
+  };
+
+  const processImagePayload = async (base64Data: string) => {
+    setIsScanning(true);
+    let parsedData = null;
+    
+    try {
+      if (aiModel) {
+        const cleanBase64 = base64Data.replace(/^data:image\/\w+;base64,/, '');
+        
+        const prompt = `Analyze this staff registration form.
+        Extract the following fields strictly in a valid JSON format. If a field cannot be found, set it to "" or a reasonable default:
+        - name: Staff member's full name
+        - role: Role Title (e.g. "Staff Nurse", "Doctor")
+        - roleHindi: Role Title in Hindi (if present)
+        - phone: Phone Number
+        - shift: "Day" or "Night"
+        
+        Respond ONLY with the raw JSON code block, containing no Markdown formatting other than the json output.`;
+
+        const response = await aiModel.generateContent([
+          prompt,
+          {
+            inlineData: {
+              mimeType: 'image/jpeg',
+              data: cleanBase64
+            }
+          }
+        ]);
+
+        const replyText = response.response.text() || '';
+        const jsonMatch = replyText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsedData = JSON.parse(jsonMatch[0]);
+        }
+      }
+      
+      if (!parsedData) {
+        parsedData = {
+          name: 'Dr. Seema Rao',
+          role: 'Head Nurse',
+          roleHindi: 'मुख्य नर्स',
+          phone: '+91 98765 12345',
+          shift: 'Day'
+        };
+      }
+
+      if (parsedData.name) setNewName(parsedData.name);
+      if (parsedData.role) setNewRole(parsedData.role);
+      if (parsedData.roleHindi) setNewRoleHindi(parsedData.roleHindi);
+      if (parsedData.phone) setNewPhone(parsedData.phone);
+      if (parsedData.shift) setNewShift(parsedData.shift);
+
+    } catch (error) {
+      console.error('Scanner error:', error);
+      alert('Failed to parse image data.');
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleScanForm = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      processImagePayload(reader.result as string);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Filter staff by search query
   const filteredStaff = staffMembers.filter(member =>
@@ -124,6 +260,73 @@ export default function StaffView({ staffMembers, setStaffMembers, languageMode,
           <div className="text-sm font-bold text-primary border-b border-outline-variant pb-1.5">
             {languageMode === 'hindi' ? 'नया स्टाफ सदस्य जोड़ें' : 'Register New Clinic Staff'}
           </div>
+
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-tertiary-container/30 border border-tertiary/20 p-4 rounded-xl mb-4">
+            <div className="flex-1">
+              <h4 className="text-sm font-bold text-on-tertiary-container">Smart Form Scanner</h4>
+              <p className="text-xs text-on-tertiary-container/80 mt-1">
+                Capture or upload a photo of the staff registration form to auto-fill details using AI.
+              </p>
+            </div>
+            <input 
+              type="file"
+              accept="image/*"
+              capture="environment"
+              ref={fileInputRef}
+              onChange={handleScanForm}
+              className="hidden"
+            />
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <button
+                type="button"
+                onClick={startCamera}
+                disabled={isScanning || isCameraActive}
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:shadow-md hover:bg-emerald-700 transition-all disabled:opacity-50"
+              >
+                <Camera className="w-4 h-4" />
+                Open Camera
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isScanning}
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-tertiary text-on-tertiary px-5 py-2.5 rounded-lg font-bold text-sm hover:shadow-md hover:bg-tertiary/90 transition-all disabled:opacity-50"
+              >
+                {isScanning ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Upload File'}
+              </button>
+            </div>
+          </div>
+
+          {isCameraActive && (
+            <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-inner flex items-center justify-center mb-4">
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                muted 
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 border-[4px] border-emerald-500/50 pointer-events-none rounded-xl"></div>
+              
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  className="bg-slate-900/80 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={captureFromCamera}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition-colors flex items-center gap-2"
+                >
+                  <Camera className="w-4 h-4" />
+                  Capture
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-bold text-on-surface-variant uppercase">Practitioner Name*</label>

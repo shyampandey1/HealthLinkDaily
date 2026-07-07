@@ -80,7 +80,7 @@ export default function ClinicInfoModal({
     localStorage.setItem('hl_key_gemini', geminiKey);
     localStorage.setItem('hl_key_firebase_api', firebaseApiKey);
     localStorage.setItem('hl_key_firebase_proj', firebaseProjId);
-    alert('API Keys and Integration settings updated! Refresh to apply credentials.');
+    alert('Settings saved successfully! Refresh the page to apply changes.');
   };
 
   // Run mock Diagnostic key test
@@ -93,12 +93,13 @@ export default function ClinicInfoModal({
       const trimmedKey = geminiKey.trim();
       if (!trimmedKey || trimmedKey === '' || trimmedKey === 'MY_GEMINI_API_KEY') {
         setTestStatus('failed');
-        setTestMsg("Gemini Vision Key validation failed: Key is empty, invalid, or set to the default placeholder 'MY_GEMINI_API_KEY'. Please replace it with your actual Google AI Studio API key.");
+        setTestMsg("Smart Scanner connection failed. Please ensure the key is entered correctly.");
         return;
       }
-      if (trimmedKey.length < 15 || !trimmedKey.startsWith('AIzaSy')) {
+      // Relaxed check to allow various Vertex AI/Firebase keys
+      if (trimmedKey.length < 10) {
         setTestStatus('failed');
-        setTestMsg('Gemini Vision Key validation failed: Key format is invalid (Google Cloud/Gemini API keys typically start with "AIzaSy" and are at least 15 characters long).');
+        setTestMsg('Smart Scanner connection failed. The key provided is too short.');
         return;
       }
       
@@ -167,8 +168,8 @@ export default function ClinicInfoModal({
             <Settings className="w-5 h-5 text-teal-600 dark:text-teal-400 animate-spin-slow" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">System Configuration & Integrations</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Configure database sync, manage OTA firmware updates, and authenticate third-party endpoints</p>
+            <h1 className="text-base font-bold text-slate-900 dark:text-slate-100">App Settings</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Manage your hospital application settings and connections</p>
           </div>
         </div>
         <button 
@@ -183,41 +184,41 @@ export default function ClinicInfoModal({
       {/* Main Panel Layout */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Navigation Sidebar */}
-        <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-outline-variant/60 bg-surface-container-lowest p-4 space-y-1.5 shrink-0 flex flex-row md:flex-col overflow-x-auto no-scrollbar md:overflow-x-visible gap-2 md:gap-0">
+        <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-outline-variant/60 bg-surface-container-lowest p-4 space-y-1.5 shrink-0 flex flex-col gap-1.5">
           <button
             onClick={() => setActiveSettingsTab('metrics')}
-            className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 justify-center md:justify-start ${
+            className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 justify-start ${
               activeSettingsTab === 'metrics'
                 ? 'bg-teal-600 text-white shadow-md shadow-teal-650/10'
                 : 'text-slate-650 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 text-on-surface'
             }`}
           >
             <Sliders className="w-4 h-4 shrink-0" />
-            <span>Config & Metrics</span>
+            <span>Dashboard</span>
           </button>
           
           <button
             onClick={() => setActiveSettingsTab('ota')}
-            className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 justify-center md:justify-start ${
+            className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 justify-start ${
               activeSettingsTab === 'ota'
                 ? 'bg-teal-600 text-white shadow-md shadow-teal-650/10'
                 : 'text-slate-650 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 text-on-surface'
             }`}
           >
             <Cpu className="w-4 h-4 shrink-0" />
-            <span>OTA Firmware</span>
+            <span>App Updates</span>
           </button>
           
           <button
             onClick={() => setActiveSettingsTab('keys')}
-            className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 justify-center md:justify-start ${
+            className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 justify-start ${
               activeSettingsTab === 'keys'
                 ? 'bg-teal-600 text-white shadow-md shadow-teal-650/10'
                 : 'text-slate-650 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 text-on-surface'
             }`}
           >
             <Key className="w-4 h-4 shrink-0" />
-            <span>API Credentials</span>
+            <span>Advanced Settings</span>
           </button>
 
           {/* Spacer for desktop */}
@@ -462,7 +463,7 @@ export default function ClinicInfoModal({
               <div className="space-y-6 animate-fadeIn">
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-outline-variant p-6 space-y-5 shadow-sm">
                   <div className="flex justify-between items-center border-b border-outline-variant pb-2">
-                    <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">Third-Party Sync Credentials</h2>
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">System Connections</h2>
                     <button
                       onClick={() => setShowKeys(!showKeys)}
                       className="text-[10px] text-teal-650 dark:text-teal-450 font-bold hover:underline cursor-pointer flex items-center gap-1.5"
@@ -474,7 +475,7 @@ export default function ClinicInfoModal({
 
                   <div className="space-y-4">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Gemini AI Vision Key</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Smart Scanner Key</label>
                       <input
                         type={showKeys ? 'text' : 'password'}
                         value={geminiKey}
@@ -485,7 +486,7 @@ export default function ClinicInfoModal({
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Firebase Client API Key</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Cloud Database Key</label>
                       <input
                         type={showKeys ? 'text' : 'password'}
                         value={firebaseApiKey}
@@ -496,7 +497,7 @@ export default function ClinicInfoModal({
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Firebase Project ID</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Hospital Cloud ID</label>
                       <input
                         type="text"
                         value={firebaseProjId}
@@ -510,7 +511,7 @@ export default function ClinicInfoModal({
                       className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer mt-2"
                     >
                       <Save className="w-4 h-4" />
-                      <span>Apply API Credentials</span>
+                      <span>Save Settings</span>
                     </button>
                   </div>
                 </div>
@@ -518,7 +519,7 @@ export default function ClinicInfoModal({
                 {/* Connections Tester Diagnostics */}
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-outline-variant p-6 space-y-4 shadow-sm">
                   <div>
-                    <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider border-b border-outline-variant pb-2">Integration Diagnostics</h2>
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider border-b border-outline-variant pb-2">System Check</h2>
                   </div>
 
                   {testStatus === 'idle' ? (
@@ -527,7 +528,7 @@ export default function ClinicInfoModal({
                       className="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 border border-outline-variant text-slate-800 dark:text-slate-200 font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
                     >
                       <Wifi className="w-4 h-4 text-teal-600 animate-pulse shrink-0" />
-                      <span>Run Connection Diagnostics Handshake</span>
+                      <span>Run System Connection Check</span>
                     </button>
                   ) : (
                     <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-outline-variant space-y-3.5 animate-fadeIn">
@@ -547,7 +548,7 @@ export default function ClinicInfoModal({
                         {testStatus === 'failed' && (
                           <>
                             <AlertTriangle className="w-5 h-5 text-red-500" />
-                            <span className="font-bold text-red-600 dark:text-red-400">Handshake Failed</span>
+                            <span className="font-bold text-red-600 dark:text-red-400">Connection Error</span>
                           </>
                         )}
                       </div>

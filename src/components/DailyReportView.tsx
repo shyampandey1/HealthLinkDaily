@@ -272,9 +272,17 @@ export default function DailyReportView({
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="font-mono text-base font-bold w-10 text-center select-none text-primary">
-                    {item.count}
-                  </span>
+                  <input
+                    type="number"
+                    value={item.count}
+                    onChange={(e) => {
+                      const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                      setStockItems(prev =>
+                        prev.map(i => i.id === item.id ? { ...i, count: val } : i)
+                      );
+                    }}
+                    className="font-mono text-base font-bold w-14 text-center text-primary bg-transparent focus:outline-none border-b border-outline-variant/30 focus:border-secondary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
                   <button
                     id={`btn-inc-stock-${item.id}`}
                     aria-label={`Increase ${item.name}`}
