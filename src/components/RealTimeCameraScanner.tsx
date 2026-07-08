@@ -133,25 +133,27 @@ export default function RealTimeCameraScanner({ isOpen, onClose, onScanComplete 
       return;
     }
 
-    // Command: "add twenty", "add fifty bottles", "quantity ten"
-    const qtyRegex = /(?:add|qty|quantity|set|make)\s*(\d+|ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|one hundred)/i;
-    const match = phrase.match(qtyRegex);
-    if (match) {
-      const rawVal = match[1];
-      let numVal = parseInt(rawVal, 10);
-      if (isNaN(numVal)) {
-        // Simple word-to-number dictionary for quick healthcare field logs
-        const wordMap: { [key: string]: number } = {
-          'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
-          'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
-          'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50,
-          'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90,
-          'hundred': 100
-        };
-        numVal = wordMap[rawVal.toLowerCase()] || 1;
-      }
+    // Command: Parse any quantity mentioned
+    const qtyMatch = phrase.match(/\b\d+\b/);
+    if (qtyMatch) {
+      const numVal = parseInt(qtyMatch[0], 10);
       setRecognizedQuantity(numVal);
       setVoiceNotification(`Quantity locked verbally: ${numVal} units`);
+    } else {
+      const wordMap: { [key: string]: number } = {
+        'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+        'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+        'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50,
+        'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90,
+        'hundred': 100
+      };
+      for (const word of Object.keys(wordMap)) {
+        if (phrase.includes(word)) {
+          setRecognizedQuantity(wordMap[word]);
+          setVoiceNotification(`Quantity locked verbally: ${wordMap[word]} units`);
+          break;
+        }
+      }
     }
   }
 
