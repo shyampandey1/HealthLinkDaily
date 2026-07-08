@@ -459,6 +459,34 @@ Do not include any markdown formatting, backticks, or extra text. Just the raw J
     }
   };
 
+  const handleFeedVoiceData = () => {
+    if (!voiceTranscript) return;
+    setIsProcessing(true);
+    setVoiceNotification('Feeding voice data to system...');
+    
+    let mType = 'other';
+    const lowerText = voiceTranscript.toLowerCase();
+    if (lowerText.includes('drip') || lowerText.includes('saline')) mType = 'drip';
+    else if (lowerText.includes('vial') || lowerText.includes('injection')) mType = 'vial';
+    else if (lowerText.includes('tablet') || lowerText.includes('paracetamol')) mType = 'tablet';
+    else if (lowerText.includes('box')) mType = 'box';
+
+    const finalData = {
+      medicine_name: voiceTranscript.length > 30 ? voiceTranscript.substring(0, 30) + '...' : voiceTranscript,
+      batch_number: `V-BATCH-${Math.floor(Math.random() * 9000) + 1000}`,
+      expiry_date: '12/2028',
+      item_type: mType,
+      qty: recognizedQuantity !== null ? recognizedQuantity : 1,
+      confidence: 0.99,
+      sourceMethod: 'Voice Input'
+    };
+
+    setTimeout(() => {
+      onScanComplete(finalData, gpsLocation || { lat: 28.6139, lng: 77.2090 });
+      handleClose();
+    }, 1200);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -679,6 +707,23 @@ Do not include any markdown formatting, backticks, or extra text. Just the raw J
               {voiceActive ? <Mic className="w-4 h-4 animate-bounce" /> : <MicOff className="w-4 h-4" />}
               <span>{voiceActive ? 'Speech Active' : 'Hands-Free (Mic)'}</span>
             </button>
+
+            {/* Feed Voice Data Button */}
+            {voiceTranscript && (
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={handleFeedVoiceData}
+                className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer ${
+                  isProcessing
+                    ? 'bg-slate-800 text-slate-500 border border-slate-750 cursor-not-allowed'
+                    : 'bg-blue-500 text-white hover:bg-blue-400'
+                }`}
+              >
+                <Mic className="w-4 h-4" />
+                <span>Feed Voice Data</span>
+              </button>
+            )}
 
             {/* Ingest Capture Trigger */}
             <button
