@@ -495,6 +495,50 @@ Do not include any markdown formatting, backticks, or extra text. Just the raw J
     <div id="camera-scanner-overlay" className="fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-50 p-4 backdrop-blur-md">
       <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col relative max-h-[90vh]">
         
+        {/* VISIBLE VOICE FEEDBACK OVERLAY */}
+        {voiceTranscript && !isProcessing && (
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-6 z-[60]">
+            <div className="bg-slate-900 border border-blue-500/50 rounded-2xl p-6 shadow-2xl max-w-sm w-full text-center space-y-4 animate-fadeIn">
+              <div className="mx-auto bg-blue-500/20 w-12 h-12 rounded-full flex items-center justify-center mb-2">
+                <Mic className="w-6 h-6 text-blue-400" />
+              </div>
+              <h4 className="text-white font-bold text-lg">Voice Data Detected</h4>
+              
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-left space-y-3">
+                <div>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Raw Transcript</span>
+                  <p className="text-blue-400 text-sm italic font-medium">"{voiceTranscript}"</p>
+                </div>
+                
+                {recognizedQuantity !== null && (
+                  <div className="flex justify-between items-center border-t border-slate-800 pt-3">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Extracted Quantity</span>
+                    <span className="text-blue-400 font-mono font-black text-xl">{recognizedQuantity}</span>
+                  </div>
+                )}
+              </div>
+              
+              <p className="text-xs text-slate-400 pb-1">Review the extracted data before feeding it.</p>
+              
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => { setVoiceTranscript(''); setRecognizedQuantity(null); }} 
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700 cursor-pointer"
+                >
+                  Discard
+                </button>
+                <button 
+                  onClick={handleFeedVoiceData} 
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" />
+                  Feed Data
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Top Header Controls */}
         <div className="flex items-center justify-between p-4 bg-slate-950 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2.5">
@@ -601,50 +645,6 @@ Do not include any markdown formatting, backticks, or extra text. Just the raw J
                 {/* Helpful prompt */}
                 <div className="absolute -bottom-9 left-1/2 -translate-x-1/2 bg-slate-950/90 text-[10px] text-emerald-400 px-3 py-1 rounded-full font-bold border border-emerald-500/20 shadow uppercase tracking-wide">
                   Align Medicine Label / Drip Info
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* VISIBLE VOICE FEEDBACK OVERLAY */}
-          {voiceTranscript && !isProcessing && (
-            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-6 z-[60]">
-              <div className="bg-slate-900 border border-blue-500/50 rounded-2xl p-6 shadow-2xl max-w-sm w-full text-center space-y-4 animate-fadeIn">
-                <div className="mx-auto bg-blue-500/20 w-12 h-12 rounded-full flex items-center justify-center mb-2">
-                  <Mic className="w-6 h-6 text-blue-400" />
-                </div>
-                <h4 className="text-white font-bold text-lg">Voice Data Detected</h4>
-                
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-left space-y-3">
-                  <div>
-                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Raw Transcript</span>
-                    <p className="text-blue-400 text-sm italic font-medium">"{voiceTranscript}"</p>
-                  </div>
-                  
-                  {recognizedQuantity !== null && (
-                    <div className="flex justify-between items-center border-t border-slate-800 pt-3">
-                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Extracted Quantity</span>
-                      <span className="text-blue-400 font-mono font-black text-xl">{recognizedQuantity}</span>
-                    </div>
-                  )}
-                </div>
-                
-                <p className="text-xs text-slate-400 pb-1">Review the extracted data before feeding it.</p>
-                
-                <div className="flex gap-3">
-                  <button 
-                    onClick={() => { setVoiceTranscript(''); setRecognizedQuantity(null); }} 
-                    className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700 cursor-pointer"
-                  >
-                    Discard
-                  </button>
-                  <button 
-                    onClick={handleFeedVoiceData} 
-                    className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Check className="w-4 h-4" />
-                    Feed Data
-                  </button>
                 </div>
               </div>
             </div>
