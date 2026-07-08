@@ -8,6 +8,7 @@ import { MapPin, Compass, Search, Filter, Clock, Sparkles, ShieldAlert, Mic, Mic
 import { StockItem } from '../types';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
+import WeatherWidget from './WeatherWidget';
 
 const MapController = ({ center }: { center: [number, number] }) => {
   const map = useMap();
@@ -66,7 +67,7 @@ export default function GeoHotspotView({
   const recognitionRef = useRef<any>(null);
 
   // Map settings
-  const [mapLayer, setMapLayer] = useState<'radar' | 'satellite' | 'grid'>('radar');
+  const [mapLayer, setMapLayer] = useState<'standard' | 'satellite'>('standard');
 
   // Boundaries for the district coordinate mapping
   // Map Delhi NCR area approximately: Lat: [28.30, 28.95], Lng: [76.50, 77.50]
@@ -275,10 +276,10 @@ export default function GeoHotspotView({
             </div>
             <div>
               <h2 className="text-base font-bold text-primary leading-tight">
-                {languageMode === 'hindi' ? 'भू-हॉटस्पॉट ट्रैकिंग डैशबोर्ड' : 'Geo Hotspot Logistics Tracker'}
+                {languageMode === 'hindi' ? 'दवा वितरण एवं स्थान मानचित्र' : 'Medicine Map & Location Tracker'}
               </h2>
               <span className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider block mt-1">
-                {languageMode === 'hindi' ? 'वास्तविक समय आपूर्ति बीकन और वॉयस कमांड लिंक' : 'Real-time Supply Beacon Network & Voice Command Link'}
+                {languageMode === 'hindi' ? 'दवा वितरण देखें और आवाज द्वारा स्थान जोड़ें' : 'View supply distributions and add coordinates using voice commands'}
               </span>
             </div>
           </div>
@@ -286,8 +287,8 @@ export default function GeoHotspotView({
 
         <div className="flex items-center gap-2 shrink-0">
           <div className="bg-white/80 dark:bg-black/40 px-3.5 py-1.5 rounded-xl border border-outline-variant text-center">
-            <span className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider block">Total Geotags</span>
-            <span className="font-mono text-sm font-black text-secondary">{geoScans.length} Locations</span>
+            <span className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider block">Total Locations</span>
+            <span className="font-mono text-sm font-black text-secondary">{geoScans.length} Places</span>
           </div>
 
           <button
@@ -295,8 +296,8 @@ export default function GeoHotspotView({
             onClick={() => setShowSimPanel(!showSimPanel)}
             className="bg-secondary text-on-secondary hover:opacity-90 text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <Terminal className="w-3.5 h-3.5" />
-            <span>{showSimPanel ? 'Hide Form' : 'Test Location'}</span>
+            <MapPin className="w-3.5 h-3.5" />
+            <span>{showSimPanel ? 'Close Form' : 'Add Marker'}</span>
           </button>
         </div>
       </div>
@@ -307,10 +308,10 @@ export default function GeoHotspotView({
           <div className="flex justify-between items-center border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4.5 h-4.5 text-yellow-400" />
-              <span className="text-xs font-bold text-white uppercase tracking-wider">Add Test Location</span>
+              <span className="text-xs font-bold text-white uppercase tracking-wider">Mark a Location</span>
             </div>
             <span className="text-[9px] bg-emerald-500/10 text-emerald-400 font-mono border border-emerald-500/20 px-2 py-0.5 rounded">
-              TEST MODE
+              DEMO MODE
             </span>
           </div>
 
@@ -318,7 +319,7 @@ export default function GeoHotspotView({
             {/* Column 1: Medicine Info */}
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Medication Name</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Medicine Name</label>
                 <input
                   type="text"
                   value={simName}
@@ -342,16 +343,16 @@ export default function GeoHotspotView({
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Form Type</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Packaging / Type</label>
                   <select
                     value={simType}
                     onChange={(e) => setSimType(e.target.value as any)}
                     className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
                   >
-                    <option value="drip">Drip Bottle</option>
-                    <option value="vial">Vial / Ampoule</option>
-                    <option value="box">Retail Box</option>
-                    <option value="tablet">Strip / Tablets</option>
+                    <option value="drip">Infusion / Drip</option>
+                    <option value="vial">Injection / Vial</option>
+                    <option value="box">Box</option>
+                    <option value="tablet">Tablets / Strips</option>
                   </select>
                 </div>
               </div>
@@ -385,7 +386,7 @@ export default function GeoHotspotView({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Quick PHC Presets</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Quick Location Presets</label>
                 <div className="flex flex-wrap gap-1">
                   {presets.map((preset) => (
                     <button
@@ -395,20 +396,19 @@ export default function GeoHotspotView({
                         setSimLat(preset.lat);
                         setSimLng(preset.lng);
                       }}
-                      className="text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-700 transition-all cursor-pointer"
+                      className="text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-700 transition-all cursor-pointer font-medium"
                     >
-                      {preset.name.split(' ')[0]}
+                      {preset.name.replace(/^(RHTC|PUHC|PHC)\s+/, '')}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Column 3: Verbal Simulation & Submit */}
             <div className="space-y-3 flex flex-col justify-between">
               <div>
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  Verbal Voice Command Log {languageMode === 'hindi' ? '(बोलने के लिए माइक दबाएं)' : '(Click mic to speak)'}
+                  Speak to Fill Form {languageMode === 'hindi' ? '(आवाज से फॉर्म भरने के लिए माइक दबाएं)' : '(Click mic to speak)'}
                 </label>
                 <div className="relative flex items-center">
                   <button
@@ -473,15 +473,15 @@ export default function GeoHotspotView({
             <div className="flex items-center gap-2">
               <Map className="w-4 h-4 text-secondary animate-pulse" />
               <span className="text-xs font-bold text-primary uppercase tracking-wider">
-                District Medical Supply Deployment
+                Medical Stock Location Map
               </span>
             </div>
 
             {/* Layer toggles */}
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-on-surface-variant font-bold hidden sm:inline">LAYER:</span>
+              <span className="text-[10px] text-on-surface-variant font-bold hidden sm:inline">MAP VIEW:</span>
               <div className="bg-surface-container-high p-0.5 rounded-lg flex border border-outline-variant">
-                {(['radar', 'satellite', 'grid'] as const).map((layer) => (
+                {(['standard', 'satellite'] as const).map((layer) => (
                   <button
                     key={layer}
                     onClick={() => setMapLayer(layer)}
@@ -491,7 +491,7 @@ export default function GeoHotspotView({
                         : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
                     }`}
                   >
-                    {layer}
+                    {layer === 'standard' ? 'Standard' : 'Satellite'}
                   </button>
                 ))}
               </div>
@@ -566,21 +566,21 @@ export default function GeoHotspotView({
               <div className="absolute inset-0 opacity-20 dark:opacity-10 pointer-events-none bg-gradient-to-tr from-cyan-900/20 via-slate-100 to-indigo-950/20 dark:from-cyan-900/40 dark:via-slate-950 dark:to-indigo-950/40 z-[15]" />
             )}
 
-            {/* Live Sweeping Radar bar over real map */}
-            {mapLayer === 'radar' && (
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] origin-center bg-gradient-to-r from-transparent via-emerald-500/15 dark:via-emerald-500/10 to-transparent animate-[spin_6s_linear_infinite] pointer-events-none z-[15]" />
-            )}
-
             {/* District Target Center Overlay */}
             <div className="absolute top-4 right-4 bg-white/90 dark:bg-black/60 border border-outline-variant dark:border-slate-800 rounded-lg p-2 text-right select-none text-[8px] font-mono text-slate-700 dark:text-slate-300 leading-normal pointer-events-none z-20 shadow-lg backdrop-blur-sm">
-              <p className="font-bold text-emerald-600 dark:text-emerald-400">CENTER: HARYANA REGION</p>
-              <p>LAT: {centerLat.toFixed(4)}°N</p>
-              <p>LNG: {centerLng.toFixed(4)}°E</p>
+              <p className="font-bold text-emerald-600 dark:text-emerald-400">Center: Haryana Region</p>
+              <p>Latitude: {centerLat.toFixed(4)}°N</p>
+              <p>Longitude: {centerLng.toFixed(4)}°E</p>
             </div>
 
             {/* Dynamic Compass Rose decoration */}
             <div className="absolute bottom-4 right-4 opacity-75 dark:opacity-60 select-none pointer-events-none z-20 bg-white/50 dark:bg-black/50 rounded-full p-1 backdrop-blur-sm">
               <Compass className="w-8 h-8 text-slate-700 dark:text-slate-400 animate-spin-slow" />
+            </div>
+
+            {/* Weather Widget Overlay */}
+            <div className="absolute top-4 left-4 z-[25] pointer-events-none">
+              <WeatherWidget />
             </div>
 
           </div>
@@ -613,14 +613,14 @@ export default function GeoHotspotView({
           {/* Filter & Search Bar */}
           <div className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-4 shadow-sm space-y-3 shrink-0">
             <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider block">
-              Search & Filter Supply logs
+              Search & Filter Locations
             </span>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search scans, batch, operator..."
+                  placeholder="Search by medicine, batch, operator..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-surface-container border border-outline-variant rounded-xl pl-9 pr-3 py-1.5 text-xs text-on-surface focus:outline-none focus:border-secondary font-medium"
@@ -633,9 +633,9 @@ export default function GeoHotspotView({
                   onChange={(e) => setTypeFilter(e.target.value)}
                   className="bg-surface-container border border-outline-variant rounded-xl px-2.5 py-1.5 text-xs text-on-surface font-semibold focus:outline-none focus:border-secondary"
                 >
-                  <option value="All">All Forms</option>
-                  <option value="drip">Drip Bottles</option>
-                  <option value="vial">Vials</option>
+                  <option value="All">All Types</option>
+                  <option value="drip">Drips</option>
+                  <option value="vial">Injections / Vials</option>
                   <option value="tablet">Tablets</option>
                   <option value="box">Boxes</option>
                 </select>
@@ -647,15 +647,15 @@ export default function GeoHotspotView({
           <div className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col min-h-[300px]">
             <div className="px-5 py-3.5 bg-surface-container-low border-b border-outline-variant flex justify-between items-center shrink-0">
               <span className="text-xs font-bold text-primary uppercase tracking-wider">
-                Telemetry Station Data
+                Selected Location Details
               </span>
               {selectedScan ? (
                 <span className="text-[9px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded font-mono font-bold">
-                  ACTIVE SCAN
+                  ACTIVE MARKER
                 </span>
               ) : (
                 <span className="text-[9px] text-on-surface-variant italic">
-                  Select a pin on the radar map
+                  Select a marker on the map
                 </span>
               )}
             </div>
@@ -686,15 +686,15 @@ export default function GeoHotspotView({
                 {/* GPS Coordinates locked */}
                 <div className="bg-surface-container-low p-3.5 rounded-xl border border-outline-variant space-y-2 font-mono text-[11px] text-on-surface-variant">
                   <div className="flex justify-between items-center">
-                    <span className="font-sans font-bold text-[10px] text-secondary uppercase tracking-wider">Coordinates locked</span>
+                    <span className="font-sans font-bold text-[10px] text-secondary uppercase tracking-wider">Location Coordinates</span>
                     <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                   </div>
                   <div className="flex justify-between">
-                    <span>GPS Latitude:</span>
+                    <span>Latitude:</span>
                     <span className="font-bold text-on-surface">{selectedScan.lat.toFixed(6)}° N</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>GPS Longitude:</span>
+                    <span>Longitude:</span>
                     <span className="font-bold text-on-surface">{selectedScan.lng.toFixed(6)}° E</span>
                   </div>
                   <div className="flex justify-between pt-1 border-t border-outline-variant/35 text-[10px]">
@@ -711,7 +711,7 @@ export default function GeoHotspotView({
                   </div>
 
                   <div className="bg-surface-container-low p-3 rounded-xl border border-outline-variant text-center">
-                    <span className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider block">Neural Matching Score</span>
+                    <span className="text-[9px] text-on-surface-variant font-bold uppercase tracking-wider block">Scan Match Accuracy</span>
                     <span className="font-mono text-lg font-black text-emerald-600 mt-1 block">{(selectedScan.confidence * 100).toFixed(0)}%</span>
                   </div>
                 </div>
@@ -725,11 +725,11 @@ export default function GeoHotspotView({
                       <MicOff className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
                     )}
                     <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
-                      Audio Transcription Log
+                      Voice Command Log
                     </span>
                   </div>
                   <p className="text-xs text-on-surface leading-normal italic">
-                    {selectedScan.verbalLog ? `"${selectedScan.verbalLog}"` : 'Hands-free voice override was inactive during this terminal capture.'}
+                    {selectedScan.verbalLog ? `"${selectedScan.verbalLog}"` : 'No voice command used.'}
                   </p>
                 </div>
 
@@ -745,9 +745,9 @@ export default function GeoHotspotView({
                 <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mb-3 text-secondary border border-outline-variant/40">
                   <Layers className="w-5 h-5 text-secondary" />
                 </div>
-                <h4 className="font-bold text-xs">No Target Selected</h4>
+                <h4 className="font-bold text-xs">No Location Selected</h4>
                 <p className="text-[11px] text-on-surface-variant/85 max-w-xs leading-relaxed mt-1">
-                  Click on any coordinate point on the map to view real-time AI supply details, GPS satellite stamps, and verbal logs.
+                  Click on any point on the map to view supply details, coordinates, and notes.
                 </p>
               </div>
             )}
@@ -762,10 +762,10 @@ export default function GeoHotspotView({
       <div className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl shadow-sm overflow-hidden shrink-0">
         <div className="px-5 py-4 bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
           <span className="text-xs font-bold text-on-surface uppercase tracking-wider">
-            Verified Optical Geotag Registry
+            Saved Medicine Scan List
           </span>
           <span className="text-[9px] text-on-surface-variant font-mono">
-            SECURED DATABASE • PRIVACY GUARANTEED
+            SECURED LOCAL DATABASE
           </span>
         </div>
 
@@ -777,10 +777,10 @@ export default function GeoHotspotView({
                 <th className="px-4 py-3">Type</th>
                 <th className="px-4 py-3">Batch</th>
                 <th className="px-4 py-3 text-center">Qty</th>
-                <th className="px-4 py-3">GPS Location</th>
-                <th className="px-4 py-3">Audio Command</th>
+                <th className="px-4 py-3">Coordinates</th>
+                <th className="px-4 py-3">Voice Command</th>
                 <th className="px-4 py-3">Timestamp</th>
-                <th className="px-5 py-3 text-right">Confidence</th>
+                <th className="px-5 py-3 text-right">Accuracy</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/40">
@@ -940,10 +940,8 @@ export default function GeoHotspotView({
               <div className="pt-3">
                 <button
                   onClick={() => {
-                    const matchedScan = geoScans.find(s => s.lat === center.lat && s.lng === center.lng);
-                    if (matchedScan) {
-                      setSelectedScanId(matchedScan.id);
-                    }
+                    const query = `${center.name}, ${center.address}`;
+                    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
                   }}
                   className="w-full bg-surface-container-high hover:bg-secondary hover:text-white transition-all text-on-surface font-bold text-[10px] py-1.5 rounded-lg border border-outline-variant/60 cursor-pointer flex items-center justify-center gap-1"
                 >
