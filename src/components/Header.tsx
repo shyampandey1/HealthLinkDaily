@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Menu, Globe, AlertCircle, Info, Sun, Moon } from 'lucide-react';
+import { Menu, Globe, AlertCircle, Info, Sun, Moon, Wifi, WifiOff } from 'lucide-react';
 import { useState } from 'react';
 
 interface HeaderProps {
@@ -13,9 +13,10 @@ interface HeaderProps {
   onToggleInfo: () => void;
   isDarkMode: boolean;
   setIsDarkMode: (mode: boolean) => void;
+  isOnline: boolean;
 }
 
-export default function Header({ languageMode, setLanguageMode, isInfoOpen, onToggleInfo, isDarkMode, setIsDarkMode }: HeaderProps) {
+export default function Header({ languageMode, setLanguageMode, isInfoOpen, onToggleInfo, isDarkMode, setIsDarkMode, isOnline }: HeaderProps) {
   const [showLangMenu, setShowLangMenu] = useState(false);
 
   const toggleLangMenu = () => {
@@ -62,7 +63,26 @@ export default function Header({ languageMode, setLanguageMode, isInfoOpen, onTo
         HealthLink Daily
       </h1>
 
-      <div className="flex items-center gap-1 ml-auto shrink-0">
+      <div className="flex items-center gap-2 ml-auto shrink-0">
+        {/* Network Sync Status Badge */}
+        {isOnline ? (
+          <span 
+            title="Connected to Firebase Cloud. Live syncing active."
+            className="hidden xs:flex items-center gap-1 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full"
+          >
+            <Wifi className="w-3 h-3 text-emerald-500 animate-pulse" />
+            <span>Cloud Synced</span>
+          </span>
+        ) : (
+          <span 
+            title="Offline Mode Active. Data will sync dynamically to cloud when internet is restored."
+            className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full animate-pulse"
+          >
+            <WifiOff className="w-3 h-3 text-amber-500" />
+            <span>Offline Mode</span>
+          </span>
+        )}
+
         {/* Mobile/Header Dark Mode Toggle */}
         <button
           id="header-btn-toggle-dark-mode"

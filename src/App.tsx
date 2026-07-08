@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { ClipboardList, Package, Users, UserCheck, Menu, Activity, ShieldAlert, ChevronLeft, ChevronRight, Sun, Moon, Compass, LogOut, Settings, Info } from 'lucide-react';
+import { ClipboardList, Package, Users, UserCheck, Menu, Activity, ShieldAlert, ChevronLeft, ChevronRight, Sun, Moon, Compass, LogOut, Settings, Info, CheckCircle2, AlertTriangle } from 'lucide-react';
 import Header from './components/Header';
 import MobileSidebar from './components/MobileSidebar';
 import AboutView from './components/AboutView';
@@ -14,6 +14,7 @@ import InventoryView from './components/InventoryView';
 import PatientsView from './components/PatientsView';
 import StaffView from './components/StaffView';
 import GeoHotspotView, { GeoScan } from './components/GeoHotspotView';
+import CentresView from './components/CentresView';
 import ClinicInfoModal from './components/ClinicInfoModal';
 import GlassmorphicPrompt, { PromptConfig } from './components/GlassmorphicPrompt';
 import AuthView from './components/AuthView';
@@ -109,7 +110,10 @@ const initialGeoScans: GeoScan[] = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('reports');
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    return (localStorage.getItem('hl_last_tab') as TabType) || 'reports';
+  });
+  const [reportSubTab, setReportSubTab] = useState<'summary' | 'hotspots' | 'centres'>('summary');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [languageMode, setLanguageMode] = useState<'english' | 'hindi' | 'bilingual'>('bilingual');
 
@@ -179,6 +183,11 @@ export default function App() {
     localStorage.setItem('hl_auth_token', token);
   };
 
+  const handleUpdateUser = (updatedUser: any) => {
+    setCurrentUser(updatedUser);
+    localStorage.setItem('hl_session_user', JSON.stringify(updatedUser));
+  };
+
   // Lifted pending report states
   const [reportNotes, setReportNotes] = useState<string>(() => {
     return localStorage.getItem('hl_pending_report_notes') || '';
@@ -202,6 +211,63 @@ export default function App() {
     onConfirm: () => {},
     onCancel: () => {},
   });
+
+  const [isOnline, setIsOnline] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return navigator.onLine;
+    }
+    return true;
+  });
+
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'warning' | 'info' } | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleOnline = async () => {
+      setIsOnline(true);
+      setToast({ message: "Internet connection restored! Syncing offline updates with Firebase Cloud...", type: "info" });
+      
+      if (isFirebaseReady) {
+        try {
+          console.log("[Offline-Sync] Syncing fresh data from Firestore...");
+          const [inv, pat, staff, rep] = await Promise.all([
+            getFirestoreInventory(),
+            getFirestorePatients(),
+            getFirestoreStaff(),
+            getFirestoreReports()
+          ]);
+          if (inv.length > 0) setStockItems(inv);
+          if (pat.length > 0) setPatients(pat);
+          if (staff.length > 0) setStaffMembers(staff);
+          if (rep.length > 0) setReportsHistory(rep);
+          setToast({ message: "Database sync complete. All local records are up to date!", type: "success" });
+        } catch (err) {
+          console.warn("[Offline-Sync] Failed to re-fetch on connection recovery.", err);
+        }
+      }
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      setToast({ message: "Internet connection lost. Running in Offline Mode. Updates will cache locally and sync automatically.", type: "warning" });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const delay = toast.type === 'success' ? 4000 : 8000;
+    const timer = setTimeout(() => setToast(null), delay);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   const openPrompt = (
     type: PromptConfig['type'],
@@ -271,6 +337,10 @@ export default function App() {
     }
   }, [isDarkMode]);
 
+  useEffect(() => {
+    localStorage.setItem('hl_last_tab', activeTab);
+  }, [activeTab]);
+
   // Fetch initial datasets from FastAPI backend or Firestore on mount
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -306,7 +376,6 @@ export default function App() {
       next = updater;
     }
     
-    // Detect added, deleted or modified stock
     // Detect added, deleted or modified stock
     if (next.length > stockItems.length) {
       const added = next.find(n => !stockItems.some(s => s.id === n.id));
@@ -510,7 +579,6 @@ export default function App() {
               { id: 'inventory' as TabType, icon: Package, label: languageMode === 'hindi' ? 'स्टॉक' : 'Inventory' },
               { id: 'patients' as TabType, icon: Users, label: languageMode === 'hindi' ? 'मरीज' : 'Patients' },
               { id: 'staff' as TabType, icon: UserCheck, label: languageMode === 'hindi' ? 'स्टाफ' : 'Staff' },
-              { id: 'geo-hotspot' as TabType, icon: Compass, label: languageMode === 'hindi' ? 'हॉटस्पॉट' : 'Hotspots' },
             ].map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -635,6 +703,7 @@ export default function App() {
           onToggleInfo={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           isDarkMode={isDarkMode}
           setIsDarkMode={setIsDarkMode}
+          isOnline={isOnline}
         />
 
         {activeTab === 'settings' ? (
@@ -642,7 +711,7 @@ export default function App() {
             <ClinicInfoModal
               isOpen={true}
               onClose={() => setActiveTab('reports')}
-              userEmail="belaur2008@gmail.com"
+              userEmail={currentUser?.email || currentUser?.username || 'user@example.com'}
               onResetData={handleResetData}
               stockCount={stockItems.length}
               patientsCount={patients.length}
@@ -650,6 +719,8 @@ export default function App() {
               reportsCount={reportsHistory.length}
               onNavigateToTab={setActiveTab}
               openPrompt={openPrompt}
+              currentUser={currentUser}
+              onUpdateUser={handleUpdateUser}
             />
           </div>
         ) : (
@@ -658,6 +729,31 @@ export default function App() {
             className="flex-1 overflow-y-auto px-6 pt-5 pb-24 md:pb-8 flex flex-col gap-6 w-full max-w-7xl mx-auto"
           >
             {activeTab === 'reports' && (
+              <div className="grid grid-cols-3 bg-slate-100 dark:bg-slate-900 rounded-full p-1 border border-outline-variant/50 w-full max-w-md mx-auto shadow-sm mt-2 mb-2 shrink-0">
+                <button
+                  onClick={() => setReportSubTab('summary')}
+                  className={`py-2 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${reportSubTab === 'summary' ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+                >
+                  Summary
+                </button>
+                <button
+                  onClick={() => setReportSubTab('hotspots')}
+                  className={`py-2 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${reportSubTab === 'hotspots' ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+                >
+                  <Compass className="w-3.5 h-3.5" />
+                  Hotspots
+                </button>
+                <button
+                  onClick={() => setReportSubTab('centres')}
+                  className={`py-2 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${reportSubTab === 'centres' ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+                >
+                  <Activity className="w-3.5 h-3.5" />
+                  Centres
+                </button>
+              </div>
+            )}
+
+            {activeTab === 'reports' && reportSubTab === 'summary' && (
               <DailyReportView
                 stockItems={stockItems}
                 setStockItems={syncStockItems}
@@ -677,6 +773,21 @@ export default function App() {
               />
             )}
 
+            {activeTab === 'reports' && reportSubTab === 'hotspots' && (
+              <GeoHotspotView
+                geoScans={geoScans}
+                setGeoScans={setGeoScans}
+                stockItems={stockItems}
+                setStockItems={syncStockItems}
+                languageMode={languageMode}
+                openPrompt={openPrompt}
+              />
+            )}
+
+            {activeTab === 'reports' && reportSubTab === 'centres' && (
+              <CentresView languageMode={languageMode} />
+            )}
+
             {activeTab === 'inventory' && (
               <InventoryView
                 stockItems={stockItems}
@@ -694,17 +805,6 @@ export default function App() {
                     ...prev
                   ]);
                 }}
-              />
-            )}
-
-            {activeTab === 'geo-hotspot' && (
-              <GeoHotspotView
-                geoScans={geoScans}
-                setGeoScans={setGeoScans}
-                stockItems={stockItems}
-                setStockItems={syncStockItems}
-                languageMode={languageMode}
-                openPrompt={openPrompt}
               />
             )}
 
@@ -744,6 +844,33 @@ export default function App() {
         config={promptConfig} 
         languageMode={languageMode} 
       />
+
+      {/* Network Connectivity & General Notification Toasts */}
+      {toast && (
+        <div className="fixed bottom-20 right-6 z-[100] max-w-sm bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-outline-variant/60 dark:border-outline-variant/30 rounded-xl p-4 shadow-xl flex items-start gap-3 animate-slideIn">
+          <div className="shrink-0 mt-0.5">
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            ) : toast.type === 'warning' ? (
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+            ) : (
+              <Info className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+            )}
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-xs font-bold text-on-surface">
+              {toast.type === 'success' ? 'Database Synchronized' : toast.type === 'warning' ? 'Offline Network Status' : 'Sync Status'}
+            </p>
+            <p className="text-[11px] text-on-surface-variant mt-0.5 leading-relaxed">{toast.message}</p>
+          </div>
+          <button 
+            onClick={() => setToast(null)} 
+            className="text-on-surface-variant/40 hover:text-on-surface text-sm cursor-pointer p-0.5 hover:bg-surface-container-high rounded transition-colors"
+          >
+            &times;
+          </button>
+        </div>
+      )}
       </div>
     </div>
   );
