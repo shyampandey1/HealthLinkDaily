@@ -235,6 +235,39 @@ export default function GeoHotspotView({
     }
   };
 
+  const playFeedback = (type: 'start' | 'success') => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(type === 'start' ? 50 : [50, 50, 50]);
+    }
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContext) {
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        osc.type = 'sine';
+        if (type === 'start') {
+          osc.frequency.setValueAtTime(440, ctx.currentTime);
+          gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.1);
+        } else {
+          osc.frequency.setValueAtTime(600, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+          gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.15);
+        }
+      }
+    } catch (e) {
+      console.warn("Audio feedback error:", e);
+    }
+  };
+
   const toggleListening = () => {
     if (isListening) {
       if (recognitionRef.current) {
@@ -255,10 +288,12 @@ export default function GeoHotspotView({
 
       rec.onstart = () => {
         setIsListening(true);
+        playFeedback('start');
       };
 
       rec.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
+        playFeedback('success');
         setSimVoiceCmd(transcript);
         parseVoiceCommand(transcript);
       };
@@ -452,23 +487,43 @@ export default function GeoHotspotView({
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={isSimulating}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2 rounded-lg transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer mt-1"
-              >
-                {isSimulating ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Adding Location...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Add Location</span>
-                  </>
-                )}
-              </button>
+              {simVoiceCmd ? (
+                <button
+                  type="submit"
+                  disabled={isSimulating}
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs py-2 rounded-lg transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer mt-1 animate-pulse"
+                >
+                  {isSimulating ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Feeding Data...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-3.5 h-3.5" />
+                      <span>Feed Voice Data</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={isSimulating}
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2 rounded-lg transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+                >
+                  {isSimulating ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Adding Location...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Add Location</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </form>
         </div>
