@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Settings, FileSpreadsheet, Download, RefreshCw, UserCheck, 
-  HelpCircle, Compass, Cpu, Key, Sliders, Eye, EyeOff, Save, CheckCircle2, AlertTriangle, Wifi, ShieldCheck, Loader2
+  HelpCircle, Compass, Cpu, Key, Sliders, Eye, EyeOff, Save, CheckCircle2, AlertTriangle, Wifi, ShieldCheck, Loader2, User
 } from 'lucide-react';
 
 interface ClinicInfoModalProps {
@@ -25,6 +25,8 @@ interface ClinicInfoModalProps {
     extra: { patientId?: string; patientName?: string; itemId?: string; itemName?: string },
     onConfirm: (data: any) => void
   ) => void;
+  currentUser?: any;
+  onUpdateUser?: (updatedUser: any) => void;
 }
 
 export default function ClinicInfoModal({
@@ -38,8 +40,10 @@ export default function ClinicInfoModal({
   reportsCount,
   onNavigateToTab,
   openPrompt,
+  currentUser,
+  onUpdateUser,
 }: ClinicInfoModalProps) {
-  const [activeSettingsTab, setActiveSettingsTab] = useState<'metrics' | 'ota' | 'keys'>('metrics');
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'metrics' | 'ota' | 'keys' | 'profile'>('profile');
   
   // System configurations
   const [autoSync, setAutoSync] = useState(() => localStorage.getItem('hl_config_autosync') !== 'false');
@@ -63,6 +67,40 @@ export default function ClinicInfoModal({
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'failed'>('idle');
   const [testMsg, setTestMsg] = useState('');
   const [testLatency, setTestLatency] = useState<number | null>(null);
+
+  // Profile Form States
+  const [profileData, setProfileData] = useState({
+    name: currentUser?.name || '',
+    age: currentUser?.age || '',
+    gender: currentUser?.gender || '',
+    email: currentUser?.email || '',
+    phone: currentUser?.phone || ''
+  });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      setProfileData({
+        name: currentUser.name || '',
+        age: currentUser.age || '',
+        gender: currentUser.gender || '',
+        email: currentUser.email || '',
+        phone: currentUser.phone || ''
+      });
+    }
+  }, [currentUser]);
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingProfile(true);
+    setTimeout(() => {
+      if (onUpdateUser) {
+        onUpdateUser({ ...currentUser, ...profileData });
+      }
+      setIsSavingProfile(false);
+      alert('Profile updated successfully!');
+    }, 800);
+  };
 
   if (!isOpen) return null;
 
@@ -186,11 +224,23 @@ export default function ClinicInfoModal({
         {/* Navigation Sidebar */}
         <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-outline-variant/60 bg-surface-container-lowest p-4 space-y-1.5 shrink-0 flex flex-col gap-1.5">
           <button
+            onClick={() => setActiveSettingsTab('profile')}
+            className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 justify-start ${
+              activeSettingsTab === 'profile'
+                ? 'bg-teal-600 text-white shadow-md shadow-teal-600/10'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 text-on-surface'
+            }`}
+          >
+            <User className="w-4 h-4 shrink-0" />
+            <span>User Profile</span>
+          </button>
+
+          <button
             onClick={() => setActiveSettingsTab('metrics')}
             className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 justify-start ${
               activeSettingsTab === 'metrics'
-                ? 'bg-teal-600 text-white shadow-md shadow-teal-650/10'
-                : 'text-slate-650 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 text-on-surface'
+                ? 'bg-teal-600 text-white shadow-md shadow-teal-600/10'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 text-on-surface'
             }`}
           >
             <Sliders className="w-4 h-4 shrink-0" />
@@ -201,8 +251,8 @@ export default function ClinicInfoModal({
             onClick={() => setActiveSettingsTab('ota')}
             className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 justify-start ${
               activeSettingsTab === 'ota'
-                ? 'bg-teal-600 text-white shadow-md shadow-teal-650/10'
-                : 'text-slate-650 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 text-on-surface'
+                ? 'bg-teal-600 text-white shadow-md shadow-teal-600/10'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 text-on-surface'
             }`}
           >
             <Cpu className="w-4 h-4 shrink-0" />
@@ -213,8 +263,8 @@ export default function ClinicInfoModal({
             onClick={() => setActiveSettingsTab('keys')}
             className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 justify-start ${
               activeSettingsTab === 'keys'
-                ? 'bg-teal-600 text-white shadow-md shadow-teal-650/10'
-                : 'text-slate-650 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 text-on-surface'
+                ? 'bg-teal-600 text-white shadow-md shadow-teal-600/10'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 text-on-surface'
             }`}
           >
             <Key className="w-4 h-4 shrink-0" />
@@ -226,7 +276,7 @@ export default function ClinicInfoModal({
 
           {/* Footer info in desktop sidebar */}
           <div className="hidden md:block bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-outline-variant/60 text-center">
-            <p className="text-[10px] font-extrabold text-teal-650 dark:text-teal-400 tracking-wider">HEALTHLINK SYSTEM</p>
+            <p className="text-[10px] font-extrabold text-teal-600 dark:text-teal-400 tracking-wider">HEALTHLINK SYSTEM</p>
             <p className="text-[9px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">v1.0.4-build.921</p>
           </div>
         </div>
@@ -234,6 +284,93 @@ export default function ClinicInfoModal({
         {/* Content Pane */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/50 dark:bg-slate-900/10">
           <div className="max-w-2xl mx-auto space-y-6">
+
+            {/* TAB: USER PROFILE */}
+            {activeSettingsTab === 'profile' && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-outline-variant p-6 shadow-sm">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider border-b border-outline-variant pb-2 mb-5">Personal Information</h2>
+                  
+                  <form onSubmit={handleSaveProfile} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Full Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={profileData.name}
+                          onChange={(e) => setProfileData({...profileData, name: e.target.value})}
+                          className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all"
+                          placeholder="Dr. John Doe"
+                        />
+                      </div>
+                      
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Email Address</label>
+                        <input
+                          type="email"
+                          value={profileData.email}
+                          onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                          className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all"
+                          placeholder="john.doe@example.com"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Phone Number</label>
+                        <input
+                          type="tel"
+                          value={profileData.phone}
+                          onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                          className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all"
+                          placeholder="+91 98765 43210"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Age</label>
+                          <input
+                            type="number"
+                            min="18"
+                            max="120"
+                            value={profileData.age}
+                            onChange={(e) => setProfileData({...profileData, age: e.target.value})}
+                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all"
+                            placeholder="35"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Gender</label>
+                          <select
+                            value={profileData.gender}
+                            onChange={(e) => setProfileData({...profileData, gender: e.target.value})}
+                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all"
+                          >
+                            <option value="">Select...</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                            <option value="Prefer not to say">Prefer not to say</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-outline-variant mt-6 flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={isSavingProfile}
+                        className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-70"
+                      >
+                        {isSavingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>{isSavingProfile ? 'Saving...' : 'Save Profile'}</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
             
             {/* TAB 1: CONFIG & METRICS */}
             {activeSettingsTab === 'metrics' && (
@@ -366,7 +503,7 @@ export default function ClinicInfoModal({
                           onClose();
                         }
                       }}
-                      className="w-full bg-red-50 text-red-650 hover:bg-red-100 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30 transition-all text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 border border-red-200 dark:border-red-900/50 cursor-pointer"
+                      className="w-full bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30 transition-all text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 border border-red-200 dark:border-red-900/50 cursor-pointer"
                     >
                       <RefreshCw className="w-4 h-4" />
                       <span>Restore default mock data</span>
@@ -466,7 +603,7 @@ export default function ClinicInfoModal({
                     <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">System Connections</h2>
                     <button
                       onClick={() => setShowKeys(!showKeys)}
-                      className="text-[10px] text-teal-650 dark:text-teal-450 font-bold hover:underline cursor-pointer flex items-center gap-1.5"
+                      className="text-[10px] text-teal-600 dark:text-teal-400 font-bold hover:underline cursor-pointer flex items-center gap-1.5"
                     >
                       {showKeys ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       <span>{showKeys ? 'Hide Keys' : 'Reveal Keys'}</span>
@@ -554,7 +691,7 @@ export default function ClinicInfoModal({
                       </div>
                       
                       {testStatus !== 'testing' && (
-                        <p className="text-xs text-slate-650 dark:text-slate-400 leading-normal select-text">
+                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-normal select-text">
                           {testMsg}
                         </p>
                       )}

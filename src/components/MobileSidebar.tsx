@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   X, Activity, Settings, LogOut, Package, Users, UserCheck, 
-  ClipboardList, Compass, Map, Info, ChevronRight, CheckCircle2 
+  ClipboardList, Compass, MapPin, Map, Info, ChevronRight, CheckCircle2 
 } from 'lucide-react';
 import { TabType } from './BottomNav';
 
@@ -90,8 +90,7 @@ export default function MobileSidebar({
               { id: 'reports' as TabType, icon: ClipboardList, label: languageMode === 'hindi' ? 'रिपोर्ट्स' : 'Reports & Dashboard' },
               { id: 'inventory' as TabType, icon: Package, label: languageMode === 'hindi' ? 'स्टॉक' : 'Medical Store' },
               { id: 'patients' as TabType, icon: Users, label: languageMode === 'hindi' ? 'मरीज' : 'Patient Registry' },
-              { id: 'staff' as TabType, icon: UserCheck, label: languageMode === 'hindi' ? 'स्टाफ' : 'Staff Roster' },
-              { id: 'geo-hotspot' as TabType, icon: Compass, label: languageMode === 'hindi' ? 'हॉटस्पॉट' : 'Geo Hotspots' }
+              { id: 'staff' as TabType, icon: UserCheck, label: languageMode === 'hindi' ? 'स्टाफ' : 'Staff Roster' }
             ].map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;

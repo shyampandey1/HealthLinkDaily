@@ -250,10 +250,10 @@ export default function PatientsView({ patients, setPatients, languageMode, open
   return (
     <div id="patients-view-main" className="flex flex-col gap-5 animate-fadeIn">
       {/* Header and Add button */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
         <div>
           <span className="text-xs font-bold text-secondary uppercase tracking-wider">
-            {languageMode === 'hindi' ? 'रोगी सूची' : 'Admissions & Registries'}
+            {languageMode === 'hindi' ? 'रोगी सूची' : 'Patients List'}
           </span>
           <h2 id="patients-header" className="font-sans text-xl font-bold text-on-surface">
             {languageMode === 'hindi' ? 'मरीज रजिस्टर' : 'Patient Register'}
@@ -265,7 +265,7 @@ export default function PatientsView({ patients, setPatients, languageMode, open
           className="bg-secondary text-on-secondary hover:bg-secondary/95 transition-all text-xs font-semibold px-3 py-1.5 rounded flex items-center gap-1.5 shadow-sm cursor-pointer"
         >
           {showAddForm ? <X className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
-          <span>{showAddForm ? (languageMode === 'hindi' ? 'रद्द करें' : 'Cancel') : (languageMode === 'hindi' ? 'नया मरीज' : 'Register')}</span>
+          <span>{showAddForm ? (languageMode === 'hindi' ? 'रद्द करें' : 'Cancel') : (languageMode === 'hindi' ? 'नया मरीज' : 'Add New Patient')}</span>
         </button>
       </div>
 
@@ -277,12 +277,12 @@ export default function PatientsView({ patients, setPatients, languageMode, open
           className="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl shadow-md space-y-3 animate-scaleUp"
         >
           <div className="text-sm font-bold text-primary border-b border-outline-variant pb-1.5">
-            {languageMode === 'hindi' ? 'नया मरीज पंजीकृत करें' : 'Admit & Register New Patient'}
+            {languageMode === 'hindi' ? 'नया मरीज पंजीकृत करें' : 'Add New Patient'}
           </div>
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-tertiary-container/30 border border-tertiary/20 p-4 rounded-xl mb-4">
             <div className="flex-1">
-              <h4 className="text-sm font-bold text-on-tertiary-container">Smart Form Scanner</h4>
+              <h4 className="text-sm font-bold text-on-tertiary-container">Scan Patient Form</h4>
               <p className="text-xs text-on-tertiary-container/80 mt-1">
                 Capture or upload a photo of the patient registration form to auto-fill details using AI.
               </p>

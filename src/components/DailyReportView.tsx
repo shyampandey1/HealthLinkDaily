@@ -132,7 +132,7 @@ export default function DailyReportView({
   if (showHistory) {
     return (
       <div id="reports-history-container" className="flex flex-col gap-5 animate-fadeIn">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
           <h2 id="history-header-title" className="font-sans text-xl font-bold text-on-surface">
             {t.historyTitle}
           </h2>
@@ -221,10 +221,10 @@ export default function DailyReportView({
       )}
 
       {/* Header section with quick access to history */}
-      <div className="flex justify-between items-center">
-        <div>
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-center md:items-center text-center md:text-left">
+        <div className="flex flex-col items-center md:items-start">
           <span className="text-xs font-bold text-secondary tracking-wider uppercase">
-            {languageMode === 'hindi' ? 'दैनिक पारी रिपोर्ट' : 'Daily Shift Log'}
+            {languageMode === 'hindi' ? 'दैनिक पारी रिपोर्ट' : 'Daily Reports'}
           </span>
           <h2 className="font-sans text-xl font-bold text-on-surface">
             {languageMode === 'hindi' ? 'आज का फॉर्म' : 'Today\'s Summary'}
@@ -233,7 +233,7 @@ export default function DailyReportView({
         <button
           id="btn-view-history"
           onClick={() => setShowHistory(true)}
-          className="bg-surface-container-low hover:bg-surface-container-high transition-colors border border-outline-variant px-3 py-1.5 rounded-lg text-xs font-semibold text-on-surface-variant flex items-center gap-1.5 cursor-pointer"
+          className="bg-surface-container-low hover:bg-surface-container-high transition-colors border border-outline-variant px-3 py-1.5 rounded-lg text-xs font-semibold text-on-surface-variant flex items-center gap-1.5 cursor-pointer self-center md:self-auto"
         >
           <History className="w-3.5 h-3.5" />
           <span>{languageMode === 'hindi' ? 'इतिहास' : 'History'} ({reportsHistory.length})</span>

@@ -530,7 +530,7 @@ Do not include any markdown formatting, backticks, or extra text. Just the raw J
               <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
                 Unable to locate a compliant WebRTC media stream device on this terminal.
               </p>
-              <button onClick={() => fileInputRef.current?.click()} className="mt-1.5 text-xs font-bold bg-teal-650 hover:bg-teal-700 text-white px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-md">
+              <button onClick={() => fileInputRef.current?.click()} className="mt-1.5 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-md">
                 <Camera className="w-4 h-4" />
                 <span>Open Device Camera</span>
               </button>

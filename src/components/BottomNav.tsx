@@ -5,7 +5,7 @@
 
 import { ClipboardList, Package, Users, UserCheck, MapPin } from 'lucide-react';
 
-export type TabType = 'reports' | 'inventory' | 'patients' | 'staff' | 'geo-hotspot' | 'settings' | 'about';
+export type TabType = 'reports' | 'inventory' | 'patients' | 'staff' | 'settings' | 'about';
 
 interface BottomNavProps {
   activeTab: TabType;

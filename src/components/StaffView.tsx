@@ -231,10 +231,10 @@ export default function StaffView({ staffMembers, setStaffMembers, languageMode,
   return (
     <div id="staff-view-main" className="flex flex-col gap-5 animate-fadeIn">
       {/* Header and Add button */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
         <div>
           <span className="text-xs font-bold text-secondary uppercase tracking-wider">
-            {languageMode === 'hindi' ? 'ड्यूटी रोस्टर' : 'Hospital & Clinic Personnel'}
+            {languageMode === 'hindi' ? 'ड्यूटी रोस्टर' : 'Staff Directory'}
           </span>
           <h2 id="staff-header" className="font-sans text-xl font-bold text-on-surface">
             {languageMode === 'hindi' ? 'स्टाफ हाजिरी' : 'Staff Directory'}

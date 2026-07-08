@@ -33,7 +33,7 @@ export default function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyMod
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 text-slate-650 dark:text-slate-350 text-xs leading-relaxed font-sans">
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 text-slate-600 dark:text-slate-300 text-xs leading-relaxed font-sans">
           
           <div className="bg-teal-50/50 dark:bg-teal-950/10 border border-teal-500/10 rounded-2xl p-4 space-y-1">
             <p className="font-bold text-teal-700 dark:text-teal-400 font-mono text-[10px] tracking-wider uppercase">HealthLink Daily — Legal Document</p>
@@ -199,11 +199,11 @@ export default function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyMod
           {/* CONTACT INFO */}
           <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-2">
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-[13px] flex items-center gap-1.5">
-              <ScrollText className="w-4 h-4 text-teal-650" />
+              <ScrollText className="w-4 h-4 text-teal-600" />
               <span>Contact & Compliance Information</span>
             </h3>
             <p>
-              For security questions, data modification requests, or system integration compliance details, please reach out to your designated District Health Information Officer or contact us directly at <a href="mailto:support@healthlinkdaily.org" className="text-teal-650 dark:text-teal-400 font-semibold hover:underline">support@healthlinkdaily.org</a>.
+              For security questions, data modification requests, or system integration compliance details, please reach out to your designated District Health Information Officer or contact us directly at <a href="mailto:support@healthlinkdaily.org" className="text-teal-600 dark:text-teal-400 font-semibold hover:underline">support@healthlinkdaily.org</a>.
             </p>
           </div>
 

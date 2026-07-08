@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Search, Plus, AlertTriangle, ShieldCheck, Filter, X, Trash2, Sparkles, Camera, Upload, Database, Lock, ShieldAlert, FileCode, Terminal, ArrowRight, Eye, EyeOff, Info, CheckCircle2, Copy, Check, FileText, TrendingUp, BrainCircuit, LineChart, RefreshCw } from 'lucide-react';
+import { Search, Plus, AlertTriangle, ShieldCheck, Filter, X, Trash2, Sparkles, Camera, Upload, Database, Lock, ShieldAlert, FileCode, Terminal, ArrowRight, Eye, EyeOff, Info, CheckCircle2, Copy, Check, FileText, TrendingUp, BrainCircuit, LineChart, RefreshCw, Edit2 } from 'lucide-react';
 import { useState, Dispatch, SetStateAction, FormEvent, useEffect } from 'react';
 import { StockItem } from '../types';
 import RealTimeCameraScanner from './RealTimeCameraScanner';
@@ -41,32 +41,32 @@ const DEMO_MEDICINE_BAGS = [
   },
   {
     id: 'B' as const,
-    hospital: 'METRO PHARMACY CORE',
+    hospital: 'GENERAL CLINIC WARD',
     date: '2026-06-30',
     rxNumber: 'Rx #1284591',
     patientName: 'Maria Rodriguez',
-    medication: 'Metformin 1000mg',
-    dosage: '1000mg',
-    instructions: 'Take 1 tablet twice daily with breakfast and dinner',
-    qty: 60,
-    unit: 'Tablets',
-    category: 'Tablets',
+    medication: 'Glucose Drip 5% Dextrose',
+    dosage: '500ml',
+    instructions: 'Intravenous infusion as directed by physician',
+    qty: 15,
+    unit: 'Bottles',
+    category: '500ml Bottles',
     doctor: 'Dr. Robert Chen',
     confidence: 0.99,
     color: 'from-indigo-500/10 to-purple-500/10 border-indigo-500/20'
   },
   {
     id: 'C' as const,
-    hospital: 'PRIMARY HEALTH ASSOCIATES',
+    hospital: 'PRIMARY HEALTH CENTER',
     date: '2026-06-28',
     rxNumber: 'Rx #5029312',
     patientName: 'Robert Chen',
-    medication: 'Atorvastatin 20mg',
-    dosage: '20mg',
-    instructions: 'Take 1 tablet daily at bedtime',
-    qty: 90,
-    unit: 'Tablets',
-    category: 'Tablets',
+    medication: 'Elastic Adhesive Bandages',
+    dosage: '10cm x 4m',
+    instructions: 'Apply dressing firmly to wound site',
+    qty: 50,
+    unit: 'Boxes',
+    category: 'Consumables',
     doctor: 'Dr. Sarah Jenkins',
     confidence: 0.97,
     color: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/20'
@@ -430,6 +430,23 @@ export default function InventoryView({ stockItems, setStockItems, languageMode,
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Manual stock editing states
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
+
+  const handleSaveManualCount = (itemId: string) => {
+    const parsed = parseInt(editValue, 10);
+    if (!isNaN(parsed) && parsed >= 0) {
+      setStockItems(prev => prev.map(item => {
+        if (item.id === itemId) {
+          return { ...item, count: parsed };
+        }
+        return item;
+      }));
+    }
+    setEditingItemId(null);
+  };
+
   // AI Forecasting state
   const [showForecast, setShowForecast] = useState(false);
   const [isForecasting, setIsForecasting] = useState(false);
@@ -443,13 +460,13 @@ export default function InventoryView({ stockItems, setStockItems, languageMode,
   const runStockForecast = async () => {
     setIsForecasting(true);
     setForecastLogs([
-      "Initializing Vertex AI prediction session...",
-      "Parsing current logistics telemetry & stock levels...",
-      "Analyzing seasonal factors (monsoon, hot weather, rural flu trends)..."
+      "Analyzing current stock levels...",
+      "Checking local health center trends...",
+      "Analyzing seasonal factors (monsoon, rural flu trends)..."
     ]);
 
     setTimeout(() => {
-      setForecastLogs(prev => [...prev, "Querying gemini-3.5-flash with clinical safety context..."]);
+      setForecastLogs(prev => [...prev, "Running smart stock prediction algorithms..."]);
     }, 450);
 
     try {
@@ -471,7 +488,7 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
         const result = await aiModel.generateContent(prompt);
         const responseText = result.response.text().trim();
         
-        setForecastLogs(prev => [...prev, "Response received from Vertex AI backend. Parsing payload..."]);
+        setForecastLogs(prev => [...prev, "Processing AI prediction results..."]);
         
         const cleanedText = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(cleanedText);
@@ -480,9 +497,9 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
           setForecastData(parsed.predictions);
           setForecastAdvice(parsed.generalAdvice || 'Keep monitoring safety thresholds.');
           setForecastLogs(prev => [...prev, "Analysis complete. Local cache synchronized."]);
-          triggerToast("Vertex AI stock prediction completed successfully!");
+          triggerToast("Stock prediction completed successfully!");
         } else {
-          throw new Error("Invalid schema received from generative model.");
+          throw new Error("Invalid response format received from model.");
         }
       } else {
         await new Promise(resolve => setTimeout(resolve, 1400));
@@ -528,8 +545,8 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
       }
     } catch (err: any) {
       console.error(err);
-      setForecastLogs(prev => [...prev, `[ERROR] Vertex AI session failed: ${err.message}`]);
-      triggerToast("AI forecasting failed. Check console logs.");
+      setForecastLogs(prev => [...prev, `[ERROR] Stock prediction failed: ${err.message}`]);
+      triggerToast("AI forecasting failed. Check logs.");
     } finally {
       setIsForecasting(false);
     }
@@ -754,16 +771,16 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
   return (
     <div id="inventory-view-main" className="flex flex-col gap-5 animate-fadeIn">
       {/* Header & Add Item button */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
         <div>
           <span className="text-xs font-bold text-secondary uppercase tracking-wider">
-            {languageMode === 'hindi' ? 'आपूर्ति श्रृंखला' : 'Supply & Inventory List'}
+            {languageMode === 'hindi' ? 'आपूर्ति श्रृंखला' : 'Inventory Overview'}
           </span>
           <h2 id="inventory-header" className="font-sans text-xl font-bold text-on-surface">
             {languageMode === 'hindi' ? 'चिकित्सा भंडार' : 'Medical Inventory'}
           </h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto mt-2 md:mt-0">
           <button
             id="btn-toggle-forecast"
             onClick={() => {
@@ -773,13 +790,13 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
             }}
             className={`transition-all text-xs font-semibold px-3 py-1.5 rounded flex items-center gap-1.5 shadow-sm cursor-pointer !text-white ${
               showForecast 
-                ? 'bg-purple-950 hover:bg-purple-950/90 border border-purple-800' 
-                : 'bg-purple-650 hover:bg-purple-750'
+                ? 'bg-purple-900 hover:bg-purple-950 border border-purple-800' 
+                : 'bg-purple-600 hover:bg-purple-700'
             }`}
             style={{ color: '#ffffff' }}
           >
             {showForecast ? <X className="w-3.5 h-3.5 !text-white" style={{ color: '#ffffff' }} /> : <BrainCircuit className="w-3.5 h-3.5 text-purple-200 animate-pulse" />}
-            <span style={{ color: '#ffffff' }}>{showForecast ? 'Close Forecast' : 'AI Forecast'}</span>
+            <span style={{ color: '#ffffff' }}>{showForecast ? 'Close Forecast' : 'Forecast Stock'}</span>
           </button>
 
           <button
@@ -797,7 +814,7 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
             style={{ color: '#ffffff' }}
           >
             {showScanner ? <X className="w-3.5 h-3.5 !text-white" style={{ color: '#ffffff' }} /> : <Sparkles className="w-3.5 h-3.5 text-yellow-300 animate-pulse" />}
-            <span style={{ color: '#ffffff' }}>{showScanner ? 'Close Scanner' : 'MediScan Vision'}</span>
+            <span style={{ color: '#ffffff' }}>{showScanner ? 'Close Scanner' : 'Scan Label'}</span>
           </button>
           
           <button
@@ -921,7 +938,7 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
         </div>
       )}
 
-      {/* Vertex AI Forecasting & Prediction Panel */}
+      {/* Smart Stock Predictor Panel */}
       {showForecast && (
         <div id="ai-forecast-panel" className="bg-surface-container-lowest border border-purple-600/30 rounded-2xl shadow-lg p-5 space-y-4 animate-scaleUp">
           <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-outline-variant pb-3 gap-3">
@@ -931,10 +948,10 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
               </div>
               <div>
                 <h3 className="font-sans text-sm font-bold text-on-surface">
-                  Vertex AI Logistics Forecaster
+                  Smart Stock Predictor
                 </h3>
                 <p className="text-[11px] text-on-surface-variant font-medium mt-0.5">
-                  Leverages Gemini AI to predict seasonal demand, inventory depletion timelines, and recommend reorder allocations.
+                  Uses AI to predict when medicines will run out and suggest when to reorder.
                 </p>
               </div>
             </div>
@@ -943,7 +960,7 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
               type="button"
               disabled={isForecasting}
               onClick={runStockForecast}
-              className="bg-purple-650 hover:bg-purple-750 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition-all shadow flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition-all shadow flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               style={{ color: '#ffffff' }}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isForecasting ? 'animate-spin' : ''}`} />
@@ -955,7 +972,7 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
             <div className="bg-slate-900 text-purple-400 font-mono text-[11px] p-4 rounded-xl border border-purple-500/20 space-y-2.5 shadow-inner">
               <div className="flex items-center gap-2 text-white font-bold border-b border-purple-500/10 pb-1.5">
                 <Terminal className="w-4 h-4 text-purple-400" />
-                <span>VERTEX_AI_PREDICTION_LOGS</span>
+                <span>PREDICTION_PROCESS_LOGS</span>
               </div>
               <div className="space-y-1.5 text-[10px]">
                 {forecastLogs.map((log, idx) => (
@@ -974,7 +991,7 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
                 <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-3 text-xs text-purple-900 dark:text-purple-300 flex items-start gap-2.5">
                   <Info className="w-4.5 h-4.5 text-purple-600 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold">Logistics Insight: </span>
+                    <span className="font-bold">Stock Insight: </span>
                     {forecastAdvice}
                   </div>
                 </div>
@@ -1045,58 +1062,27 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
               </div>
               <div>
                 <h3 className="font-sans text-sm font-bold text-on-surface">
-                  MediScan Vision
+                  Medical Supply Scanner
                 </h3>
                 <p className="text-[11px] text-on-surface-variant font-medium mt-0.5">
-                  Analyze clinical medicine containers and boxes to extract medication name, dosage strength, and package quantities.
+                  Scan a medicine box, glucose drip, bandage box, or other supply label to automatically read its details.
                 </p>
               </div>
             </div>
-
-            {/* Selector Tabs */}
-            <div className="flex bg-surface-container-low p-1 rounded-lg self-start shrink-0 border border-outline-variant">
-              <button
-                id="btn-tab-scanner-sandbox"
-                type="button"
-                onClick={() => setScannerTab('sandbox')}
-                className={`text-xs font-bold px-3 py-1.5 rounded-md cursor-pointer transition-all flex items-center gap-1.5 ${
-                  scannerTab === 'sandbox' 
-                    ? 'bg-teal-600 text-white shadow-sm' 
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
-                }`}
-              >
-                <Camera className="w-3.5 h-3.5" />
-                <span>Interactive Sandbox</span>
-              </button>
-              <button
-                id="btn-tab-scanner-blueprint"
-                type="button"
-                onClick={() => setScannerTab('blueprint')}
-                className={`text-xs font-bold px-3 py-1.5 rounded-md cursor-pointer transition-all flex items-center gap-1.5 ${
-                  scannerTab === 'blueprint' 
-                    ? 'bg-teal-600 text-white shadow-sm' 
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
-                }`}
-              >
-                <FileCode className="w-3.5 h-3.5" />
-                <span>Production Blueprint</span>
-              </button>
-            </div>
           </div>
 
-          {/* TAB 1: SANDBOX */}
-          {scannerTab === 'sandbox' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              {/* Left Column: Input Selection / Upload (Span 5) */}
-              <div className="lg:col-span-5 space-y-4">
-                <div className="space-y-1.5">
-                  <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider">
-                    Step 1: Ingest Medicine Bag Image
-                  </h4>
-                  <p className="text-[11px] text-on-surface-variant leading-relaxed">
-                    Select a high-fidelity medicine label sample below, drop an image file, or open your camera to capture directly.
-                  </p>
-                </div>
+          {/* Scanner Panel */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* Left Column: Input Selection / Upload (Span 5) */}
+            <div className="lg:col-span-5 space-y-4">
+              <div className="space-y-1.5">
+                <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider">
+                  Step 1: Capture or Select Image
+                </h4>
+                <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                  Select a sample supply image below, upload a photo, or use your device camera.
+                </p>
+              </div>
 
                 {/* PROMINENT LAUNCH SCANNER WebRTC OVERLAY TRIGGER */}
                 <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/25 rounded-xl p-3.5 space-y-2 shadow-sm">
@@ -1384,138 +1370,11 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
                       </button>
                     </div>
 
-                    {/* Part 3: Raw GCF JSON response explorer */}
-                    <div className="bg-slate-950 text-slate-300 rounded-xl p-3.5 font-mono text-[10px] border border-slate-800 space-y-2 max-h-48 overflow-y-auto shadow-inner">
-                      <div className="flex justify-between items-center text-slate-500 border-b border-slate-800 pb-1 mb-1.5">
-                        <span>GCF_RESPONSE_OBJECT.json</span>
-                        <span className="text-emerald-500">HTTP_200_OK</span>
-                      </div>
-                      <pre className="leading-relaxed">
-{JSON.stringify({
-  success: true,
-  documentId: `inv-${Date.now().toString().slice(-6)}`,
-  extractedData: {
-    medicationName: scanResult.medication.split(' ')[0],
-    dosage: scanResult.dosage,
-    quantity: scanResult.qty,
-    category: scanResult.category,
-    unit: scanResult.unit,
-  },
-  hipaaCompliance: {
-    phiDetected: true,
-    redactedElements: ["Rx Number: " + scanResult.rxNumber, "Patient Name: " + scanResult.patientName],
-    scrubbedAt: new Date().toISOString()
-  }
-}, null, 2)}
-                      </pre>
-                    </div>
                   </div>
                 )}
               </div>
             </div>
-          )}
-
-          {/* TAB 2: PRODUCTION BLUEPRINT */}
-          {scannerTab === 'blueprint' && (
-            <div className="space-y-4 animate-fadeIn">
-              {/* Blueprints Navigator */}
-              <div className="flex items-center gap-1.5 border-b border-outline-variant pb-2 overflow-x-auto">
-                <button
-                  id="btn-code-tab-function"
-                  type="button"
-                  onClick={() => { setActiveCodeTab('cloud_function'); setCopiedText(false); }}
-                  className={`text-xs font-bold px-3 py-1.5 rounded transition-all cursor-pointer whitespace-nowrap ${
-                    activeCodeTab === 'cloud_function' 
-                      ? 'bg-teal-500/10 text-teal-700 border border-teal-500/20 font-extrabold' 
-                      : 'text-on-surface-variant hover:bg-surface-container font-semibold'
-                  }`}
-                >
-                  GCP Cloud Function (index.js)
-                </button>
-                <button
-                  id="btn-code-tab-schema"
-                  type="button"
-                  onClick={() => { setActiveCodeTab('schema'); setCopiedText(false); }}
-                  className={`text-xs font-bold px-3 py-1.5 rounded transition-all cursor-pointer whitespace-nowrap ${
-                    activeCodeTab === 'schema' 
-                      ? 'bg-teal-500/10 text-teal-700 border border-teal-500/20 font-extrabold' 
-                      : 'text-on-surface-variant hover:bg-surface-container font-semibold'
-                  }`}
-                >
-                  Firestore Schema & Logic
-                </button>
-                <button
-                  id="btn-code-tab-security"
-                  type="button"
-                  onClick={() => { setActiveCodeTab('security'); setCopiedText(false); }}
-                  className={`text-xs font-bold px-3 py-1.5 rounded transition-all cursor-pointer whitespace-nowrap ${
-                    activeCodeTab === 'security' 
-                      ? 'bg-teal-500/10 text-teal-700 border border-teal-500/20 font-extrabold' 
-                      : 'text-on-surface-variant hover:bg-surface-container font-semibold'
-                  }`}
-                >
-                  HIPAA Security Guidelines
-                </button>
-              </div>
-
-              {/* Blueprints Showcase area */}
-              <div className="relative">
-                {/* Copy Button */}
-                <button
-                  id="btn-copy-blueprint-code"
-                  type="button"
-                  onClick={() => {
-                    const code = activeCodeTab === 'cloud_function' 
-                      ? CODE_SNIPPETS.cloud_function 
-                      : activeCodeTab === 'schema' 
-                        ? CODE_SNIPPETS.schema 
-                        : CODE_SNIPPETS.security;
-                    navigator.clipboard.writeText(code);
-                    setCopiedText(true);
-                    setTimeout(() => setCopiedText(false), 2000);
-                  }}
-                  className="absolute right-3 top-3 bg-slate-900/80 hover:bg-slate-900 text-teal-400 p-2 rounded-lg border border-teal-500/10 transition-all cursor-pointer flex items-center gap-1.5 shadow-md z-10"
-                  title="Copy code snippet to clipboard"
-                >
-                  {copiedText ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-[10px] font-bold text-emerald-400">Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5 text-teal-300" />
-                      <span className="text-[10px] font-bold text-teal-300">Copy Code</span>
-                    </>
-                  )}
-                </button>
-
-                {/* Styled code block */}
-                <div className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-lg">
-                  <div className="bg-slate-900/60 px-4 py-2 flex items-center gap-2 border-b border-slate-800/80 text-slate-400 font-mono text-[11px]">
-                    <Terminal className="w-4 h-4 text-teal-400" />
-                    <span>
-                      {activeCodeTab === 'cloud_function' 
-                        ? 'gcp-vision-function/index.js' 
-                        : activeCodeTab === 'schema' 
-                          ? 'src/lib/firestore-schema.ts' 
-                          : 'DOCS_HIPAA_SECURITY.md'}
-                    </span>
-                  </div>
-                  <div className="p-4 overflow-x-auto max-h-[350px]">
-                    <pre className="font-mono text-slate-300 text-[11px] leading-relaxed whitespace-pre-wrap">
-                      {activeCodeTab === 'cloud_function' 
-                        ? CODE_SNIPPETS.cloud_function 
-                        : activeCodeTab === 'schema' 
-                          ? CODE_SNIPPETS.schema 
-                          : CODE_SNIPPETS.security}
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
       )}
 
       {/* Search & Filter section */}
@@ -1527,7 +1386,7 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder={languageMode === 'hindi' ? 'दवा या सामान खोजें...' : 'Search clinical stock...'}
+            placeholder={languageMode === 'hindi' ? 'दवा या सामान खोजें...' : 'Search items...'}
             className="w-full pl-9 pr-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-secondary focus:border-secondary transition-all"
           />
         </div>
@@ -1646,19 +1505,44 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
                   </div>
 
                   <div className="text-center">
-                    <span className="text-on-surface-variant block text-[9px] uppercase font-bold tracking-wider">THRESHOLD</span>
+                    <span className="text-on-surface-variant block text-[9px] uppercase font-bold tracking-wider">MINIMUM</span>
                     <span className="text-xs font-mono font-bold text-on-surface block">{item.criticalThreshold}</span>
                   </div>
 
                   <div className="text-right">
                     <span className="text-on-surface-variant block text-[9px] uppercase font-bold tracking-wider">AVAILABLE</span>
-                    <span className="font-mono text-sm font-extrabold text-primary block">{item.count}</span>
+                    {editingItemId === item.id ? (
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={() => handleSaveManualCount(item.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveManualCount(item.id);
+                          if (e.key === 'Escape') setEditingItemId(null);
+                        }}
+                        className="w-16 text-right font-mono text-xs font-extrabold text-primary border border-teal-500 rounded px-1 py-0.5 bg-white dark:bg-slate-800 focus:outline-none"
+                        autoFocus
+                      />
+                    ) : (
+                      <div 
+                        onClick={() => {
+                          setEditingItemId(item.id);
+                          setEditValue(item.count.toString());
+                        }}
+                        className="flex items-center justify-end gap-1 cursor-pointer group/count hover:text-teal-600 transition-colors"
+                        title="Click to edit manually"
+                      >
+                        <span className="font-mono text-sm font-extrabold text-primary block">{item.count}</span>
+                        <Edit2 className="w-3 h-3 text-slate-400 opacity-0 group-hover/count:opacity-100 transition-opacity" />
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Inline Quick Adjustment Rails */}
-                <div className="flex justify-end gap-2 text-xs border-t border-outline-variant/30 pt-2">
-                  <div className="flex items-center gap-1.5 mr-auto">
+                <div className="flex items-center justify-between gap-2 text-xs border-t border-outline-variant/30 pt-2 w-full">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       id={`btn-delete-stock-${item.id}`}
                       aria-label={`Delete record for ${item.name}`}
@@ -1676,40 +1560,42 @@ Do not include any markdown backticks, comment blocks, or extra text. Just retur
                           setStockItems(prev => prev.filter(i => i.id !== item.id));
                         }
                       }}
-                      className="text-on-surface-variant/40 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50 cursor-pointer"
+                      className="text-on-surface-variant/40 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50 cursor-pointer shrink-0"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                    <span className="text-[10px] font-bold text-on-surface-variant self-center">QUICK LOG:</span>
+                    <span className="text-[9px] font-extrabold tracking-wider text-on-surface-variant uppercase">Update:</span>
                   </div>
-                  <button
-                    id={`btn-adjust-dec-10-${item.id}`}
-                    onClick={() => handleAdjustCount(item.id, -10)}
-                    className="px-2.5 py-1 border border-outline-variant rounded hover:bg-surface-container-high transition-colors font-mono cursor-pointer"
-                  >
-                    -10
-                  </button>
-                  <button
-                    id={`btn-adjust-dec-1-${item.id}`}
-                    onClick={() => handleAdjustCount(item.id, -1)}
-                    className="px-2.5 py-1 border border-outline-variant rounded hover:bg-surface-container-high transition-colors font-mono cursor-pointer"
-                  >
-                    -1
-                  </button>
-                  <button
-                    id={`btn-adjust-inc-1-${item.id}`}
-                    onClick={() => handleAdjustCount(item.id, 1)}
-                    className="px-2.5 py-1 bg-secondary-container text-on-secondary-container border border-secondary/20 rounded hover:bg-secondary/15 transition-colors font-mono cursor-pointer font-bold"
-                  >
-                    +1
-                  </button>
-                  <button
-                    id={`btn-adjust-inc-10-${item.id}`}
-                    onClick={() => handleAdjustCount(item.id, 10)}
-                    className="px-2.5 py-1 bg-secondary-container text-on-secondary-container border border-secondary/20 rounded hover:bg-secondary/15 transition-colors font-mono cursor-pointer font-bold"
-                  >
-                    +10
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      id={`btn-adjust-dec-10-${item.id}`}
+                      onClick={() => handleAdjustCount(item.id, -10)}
+                      className="px-2 py-1 border border-outline-variant rounded hover:bg-surface-container-high transition-colors font-mono cursor-pointer text-xs"
+                    >
+                      -10
+                    </button>
+                    <button
+                      id={`btn-adjust-dec-1-${item.id}`}
+                      onClick={() => handleAdjustCount(item.id, -1)}
+                      className="px-2 py-1 border border-outline-variant rounded hover:bg-surface-container-high transition-colors font-mono cursor-pointer text-xs"
+                    >
+                      -1
+                    </button>
+                    <button
+                      id={`btn-adjust-inc-1-${item.id}`}
+                      onClick={() => handleAdjustCount(item.id, 1)}
+                      className="px-2 py-1 bg-secondary-container text-on-secondary-container border border-secondary/20 rounded hover:bg-secondary/15 transition-colors font-mono cursor-pointer font-bold text-xs"
+                    >
+                      +1
+                    </button>
+                    <button
+                      id={`btn-adjust-inc-10-${item.id}`}
+                      onClick={() => handleAdjustCount(item.id, 10)}
+                      className="px-2 py-1 bg-secondary-container text-on-secondary-container border border-secondary/20 rounded hover:bg-secondary/15 transition-colors font-mono cursor-pointer font-bold text-xs"
+                    >
+                      +10
+                    </button>
+                  </div>
                 </div>
               </div>
             );
