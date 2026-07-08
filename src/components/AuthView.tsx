@@ -609,12 +609,6 @@ export default function AuthView({ onLoginSuccess, languageMode }: AuthViewProps
                   <span>Continue as Guest</span>
                 </button>
               </div>
-
-              <div className="text-center pt-2">
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold block uppercase tracking-wider">
-                  Default Demo Access: admin / admin123  or  worker / worker123
-                </span>
-              </div>
             </form>
           ) : (
             /* REGISTRATION FORMS */
