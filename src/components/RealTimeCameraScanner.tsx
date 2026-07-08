@@ -7,6 +7,59 @@ import { useState, useEffect, useRef } from 'react';
 import { Camera, X, RefreshCw, MapPin, Mic, MicOff, Sparkles, AlertCircle, Check, Play, Square } from 'lucide-react';
 import { aiModel } from '../config/firebase';
 
+const VOICE_MEDICINES = [
+  { "medicine_name": "Paracetamol 500mg", "average_daily_quantity_sold": 120 },
+  { "medicine_name": "Amoxicillin 500mg", "average_daily_quantity_sold": 45 },
+  { "medicine_name": "Ibuprofen 400mg", "average_daily_quantity_sold": 85 },
+  { "medicine_name": "Metformin 500mg", "average_daily_quantity_sold": 90 },
+  { "medicine_name": "Atorvastatin 10mg", "average_daily_quantity_sold": 75 },
+  { "medicine_name": "Amlodipine 5mg", "average_daily_quantity_sold": 70 },
+  { "medicine_name": "Omeprazole 20mg", "average_daily_quantity_sold": 110 },
+  { "medicine_name": "Pantoprazole 40mg", "average_daily_quantity_sold": 95 },
+  { "medicine_name": "Cetirizine 10mg", "average_daily_quantity_sold": 130 },
+  { "medicine_name": "Levocetirizine 5mg", "average_daily_quantity_sold": 80 },
+  { "medicine_name": "Azithromycin 500mg", "average_daily_quantity_sold": 40 },
+  { "medicine_name": "Ciprofloxacin 500mg", "average_daily_quantity_sold": 35 },
+  { "medicine_name": "Losartan 50mg", "average_daily_quantity_sold": 60 },
+  { "medicine_name": "Antacid Suspension", "average_daily_quantity_sold": 55 },
+  { "medicine_name": "Montelukast 10mg", "average_daily_quantity_sold": 65 },
+  { "medicine_name": "Diclofenac 50mg", "average_daily_quantity_sold": 50 },
+  { "medicine_name": "Aceclofenac 100mg", "average_daily_quantity_sold": 75 },
+  { "medicine_name": "Topical Pain Relief Gel", "average_daily_quantity_sold": 45 },
+  { "medicine_name": "Guaifenesin Syrup", "average_daily_quantity_sold": 60 },
+  { "medicine_name": "Saline Nasal Spray", "average_daily_quantity_sold": 40 },
+  { "medicine_name": "Multivitamin Tablets", "average_daily_quantity_sold": 100 },
+  { "medicine_name": "Domperidone 10mg", "average_daily_quantity_sold": 85 },
+  { "medicine_name": "Metoclopramide 10mg", "average_daily_quantity_sold": 20 },
+  { "medicine_name": "Ondansetron 4mg", "average_daily_quantity_sold": 45 },
+  { "medicine_name": "Telmisartan 40mg", "average_daily_quantity_sold": 80 },
+  { "medicine_name": "Glimepiride 2mg", "average_daily_quantity_sold": 65 },
+  { "medicine_name": "Sitagliptin 100mg", "average_daily_quantity_sold": 40 },
+  { "medicine_name": "Rosuvastatin 10mg", "average_daily_quantity_sold": 70 },
+  { "medicine_name": "Clopidogrel 75mg", "average_daily_quantity_sold": 50 },
+  { "medicine_name": "Aspirin 75mg", "average_daily_quantity_sold": 95 },
+  { "medicine_name": "Hydrochlorothiazide 12.5mg", "average_daily_quantity_sold": 45 },
+  { "medicine_name": "Furosemide 40mg", "average_daily_quantity_sold": 35 },
+  { "medicine_name": "Spironolactone 25mg", "average_daily_quantity_sold": 25 },
+  { "medicine_name": "Thyroxine 50mcg", "average_daily_quantity_sold": 85 },
+  { "medicine_name": "Prednisolone 5mg", "average_daily_quantity_sold": 30 },
+  { "medicine_name": "Dexamethasone 0.5mg", "average_daily_quantity_sold": 20 },
+  { "medicine_name": "Amoxicillin + Clavulanic Acid 625mg", "average_daily_quantity_sold": 55 },
+  { "medicine_name": "Cefixime 200mg", "average_daily_quantity_sold": 50 },
+  { "medicine_name": "Ofloxacin 200mg", "average_daily_quantity_sold": 40 },
+  { "medicine_name": "Metronidazole 400mg", "average_daily_quantity_sold": 45 },
+  { "medicine_name": "Fluconazole 150mg", "average_daily_quantity_sold": 15 },
+  { "medicine_name": "Vitamin D3 60K UI", "average_daily_quantity_sold": 60 },
+  { "medicine_name": "Vitamin B-Complex", "average_daily_quantity_sold": 110 },
+  { "medicine_name": "Calcium + Vitamin D3", "average_daily_quantity_sold": 85 },
+  { "medicine_name": "Iron + Folic Acid", "average_daily_quantity_sold": 50 },
+  { "medicine_name": "ORSalts (Oral Rehydration)", "average_daily_quantity_sold": 90 },
+  { "medicine_name": "Loperamide 2mg", "average_daily_quantity_sold": 40 },
+  { "medicine_name": "Bisacodyl 5mg", "average_daily_quantity_sold": 30 },
+  { "medicine_name": "Salbutamol Inhaler 100mcg", "average_daily_quantity_sold": 25 },
+  { "medicine_name": "Budecort Inhaler 200mcg", "average_daily_quantity_sold": 15 }
+];
+
 interface RealTimeCameraScannerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -466,15 +519,28 @@ Do not include any markdown formatting, backticks, or extra text. Just the raw J
     setIsProcessing(true);
     setVoiceNotification('Feeding voice data to system...');
     
-    let mType = 'other';
+    let matchedName = voiceTranscript;
+    let mType = 'tablet';
     const lowerText = voiceTranscript.toLowerCase();
-    if (lowerText.includes('drip') || lowerText.includes('saline')) mType = 'drip';
-    else if (lowerText.includes('vial') || lowerText.includes('injection')) mType = 'vial';
-    else if (lowerText.includes('tablet') || lowerText.includes('paracetamol')) mType = 'tablet';
-    else if (lowerText.includes('box')) mType = 'box';
+    
+    for (const med of VOICE_MEDICINES) {
+      const firstWord = med.medicine_name.split(' ')[0].replace(/[^a-zA-Z]/g, '').toLowerCase();
+      if (lowerText.includes(med.medicine_name.toLowerCase()) || (firstWord.length > 3 && lowerText.includes(firstWord))) {
+        matchedName = med.medicine_name;
+        
+        const lowerMed = med.medicine_name.toLowerCase();
+        if (lowerMed.includes('drip') || lowerMed.includes('saline') || lowerMed.includes('spray')) mType = 'drip';
+        else if (lowerMed.includes('vial') || lowerMed.includes('injection') || lowerMed.includes('syrup') || lowerMed.includes('suspension')) mType = 'vial';
+        else if (lowerMed.includes('tablet') || lowerMed.includes('paracetamol') || lowerMed.includes('acid') || lowerMed.includes('mg') || lowerMed.includes('mcg')) mType = 'tablet';
+        else if (lowerMed.includes('box') || lowerMed.includes('kit')) mType = 'box';
+        else mType = 'other';
+        
+        break;
+      }
+    }
 
     const finalData = {
-      medicine_name: voiceTranscript.length > 30 ? voiceTranscript.substring(0, 30) + '...' : voiceTranscript,
+      medicine_name: matchedName,
       batch_number: `V-BATCH-${Math.floor(Math.random() * 9000) + 1000}`,
       expiry_date: '12/2028',
       item_type: mType,
