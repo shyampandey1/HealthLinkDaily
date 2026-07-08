@@ -214,13 +214,25 @@ export default function GeoHotspotView({
     }
 
     // Parse preset locations
+    let locationMatched = false;
     presets.forEach(p => {
       const placeName = p.name.split(' ')[0].toLowerCase();
       if (textLower.includes(placeName) || (placeName === 'noida' && textLower.includes('नोएडा')) || (placeName === 'gurugram' && textLower.includes('गुरुग्राम')) || (placeName === 'rohtak' && textLower.includes('रोहतक')) || (placeName === 'faridabad' && textLower.includes('फरीदाबाद')) || (placeName === 'bahadurgarh' && textLower.includes('बहादुरगढ़'))) {
         setSimLat(p.lat);
         setSimLng(p.lng);
+        locationMatched = true;
       }
     });
+
+    if (!locationMatched && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setSimLat(position.coords.latitude);
+          setSimLng(position.coords.longitude);
+        },
+        (error) => console.warn("GPS Permission Denied or Error:", error)
+      );
+    }
   };
 
   const toggleListening = () => {
